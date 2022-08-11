@@ -35,12 +35,12 @@ impl Atlas {
     pub fn compile(&self, tile: TileData, viewport: Rect<f32>, resolution: Vec2D<u32>, zoom: u8) -> TileMeshBuilder {
         let tile_scale = 2u32.pow(zoom as u32) as f32;
         let height = viewport.size().x();
-        let pixel_scale = (height / (1.0 / tile_scale)) / (*resolution.y() as f32);
+        let pixel_scale = (height / (1.0 / tile_scale)) / (resolution.y() as f32);
 
         let mut builder = TileMeshBuilder::new();
         for layer in tile.layers {
             if let Some(manager) = self.layer_managers.get(&layer.name) {
-                manager.compile(layer, *pixel_scale, zoom, &mut builder);
+                manager.compile(layer, pixel_scale, zoom, &mut builder);
             }
         }
         builder

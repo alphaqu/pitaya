@@ -13,7 +13,7 @@ impl MapViewer {
     pub fn get_viewport(&self, aspect_ratio: f32) -> Box2D<f32> {
         let scale = self.get_scale();
 
-        let width = (0.5  / scale) * aspect_ratio;
+        let width = (0.5 / scale) * aspect_ratio;
         let min_x = self.x - width;
         let max_x = self.x + width;
 

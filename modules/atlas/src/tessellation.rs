@@ -81,7 +81,7 @@ pub fn tessellate_path(
 
 fn get_side(start: Vec2D<f32>, stop: Vec2D<f32>) -> Vec2D<f32> {
     let furbertensvector = stop - start;
-    Vec2D::new(-*furbertensvector.y(), *furbertensvector.x()).normalize()
+    Vec2D::new(-furbertensvector.y(), furbertensvector.x()).normalize()
 }
 
 pub fn compile_indices(outer: &[MapVertex], inner: &[&[MapVertex]]) -> Vec<u32> {

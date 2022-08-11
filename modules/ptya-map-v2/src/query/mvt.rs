@@ -347,7 +347,7 @@ fn shoelace(v: &Vec<Vec2D<f32>>) -> f32 {
     for i in 0..n {
         let from = v[j];
         let to = v[i];
-        area += (*from.x() * *to.y() ) - (*to.x()  * *from.y());
+        area += (from.x() * to.y() ) - (to.x() * from.y());
         j = i;
     }
 

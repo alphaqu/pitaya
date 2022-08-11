@@ -11,14 +11,15 @@ pub struct MapViewer {
 
 impl MapViewer {
 
-	pub fn get_viewport(&self, resolution: Vec2D<u32>) -> Viewport {
-		let scale = self.get_scale();
+	pub fn get_viewport(&self, resolution: Vec2D<u32>, aspect_ratio: f32) -> Viewport {
+		let num_tiles = self.get_scale();
 
-		let width = (0.5  / scale) * (*resolution.x() as f32 / *resolution.y() as f32);
+
+		let width = (0.5 / num_tiles) * aspect_ratio;
 		let min_x = self.x - width;
 		let max_x = self.x + width;
 
-		let height = 0.5 / scale;
+		let height = 0.5 / num_tiles;
 		let min_y = self.y - height;
 		let max_y = self.y + height;
 		
@@ -26,7 +27,7 @@ impl MapViewer {
 			resolution,
 			pos: Vec2D::new(self.x, self.y),
 			zoom: self.zoom,
-			view: Rect::new_min_max([min_x, min_y], [max_x, max_y])
+			view: Rect::new([min_x, min_y], [width, height])
 		}
 	}
 

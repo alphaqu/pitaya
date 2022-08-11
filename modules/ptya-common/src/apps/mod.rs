@@ -5,6 +5,7 @@ use fxhash::FxHashMap;
 use image::RgbaImage;
 
 pub mod app;
+pub mod drawer;
 
 
 #[macro_export]

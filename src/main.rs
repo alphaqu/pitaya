@@ -279,15 +279,15 @@ impl Pitaya {
             AppInstance::EGui(Box::new(Map::new().unwrap())),
         ));
 
-       //system.apps.load_app(AppContainer::new(
-       //    &ctx,
-       //    ptya_map_v2:: Map::app_info(),
-       //    AppInstance::OpenGL {
-       //        ctx: opengl.clone(),
-       //        buffer: Rc::new(RenderBuffer::new(opengl, UncompressedFloatFormat::U8U8U8U8, 10, 10).unwrap()),
-       //        app: Box::new(ptya_map_v2::Map::new(opengl).unwrap())
-       //    },
-       //));
+       system.apps.load_app(AppContainer::new(
+           &ctx,
+           ptya_map_v2:: Map::app_info(),
+           AppInstance::OpenGL {
+               ctx: opengl.clone(),
+               buffer: Rc::new(RenderBuffer::new(opengl, UncompressedFloatFormat::U8U8U8U8, 10, 10).unwrap()),
+               app: Box::new(ptya_map_v2::Map::new(opengl).unwrap())
+           },
+       ));
         system.apps.load_app(AppContainer::new(
             &ctx,
             WidgetApp::app_info(),

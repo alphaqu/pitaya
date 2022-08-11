@@ -14,7 +14,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use glium::backend::Context;
 use glium::framebuffer::SimpleFrameBuffer;
 use glium::Surface;
-use log::trace;
+use log::{info, trace};
 use ptya_common::app_icon;
 use ptya_common::apps::app::{AppInfo, EGuiApplication, OpenGLApplication};
 use ptya_common::settings::Settings;
@@ -38,7 +38,7 @@ mod viewport;
 
 pub struct Map {
     query: Arc<MapQuery>,
-    viewport: MapViewer,
+    viewer: MapViewer,
     graphics: MapGraphics,
     atlas: Arc<Atlas>,
 
@@ -61,13 +61,13 @@ impl OpenGLApplication for Map {
     ) {
         let response = ui.interact(rect, ui.id(), Sense::click_and_drag());
         let drag_delta = response.drag_delta();
-        let scale = self.viewport.get_scale();
+        let scale = self.viewer.get_scale();
 
-        self.viewport.x -= (drag_delta.x / rect.height()) / scale;
-        self.viewport.y -= (drag_delta.y / rect.height()) / scale;
+        self.viewer.x -= (drag_delta.x / rect.width()) / scale;
+        self.viewer.y -= (drag_delta.y / rect.height()) / scale;
 
         if let Some(hover) = response.hover_pos() {
-            self.viewport.zoom += response.ctx.input().scroll_delta.y / 1000.0;
+            self.viewer.zoom += response.ctx.input().scroll_delta.y / 1000.0;
         }
 
         let (width, height) = fb.get_dimensions();
@@ -91,7 +91,7 @@ impl Map {
     pub fn new(ctx: &Rc<Context>) -> anyways::Result<Map> {
         Ok(Map {
             query: Arc::new(MapQuery::new()?),
-            viewport: MapViewer {
+            viewer: MapViewer {
                 zoom: 12.5,
                 x: 0.53574723,
                 y: 0.30801734,
@@ -118,7 +118,7 @@ impl Map {
     }
 
     pub fn get_viewport(&mut self) -> &mut MapViewer {
-        &mut self.viewport
+        &mut self.viewer
     }
 
     pub fn tick(
@@ -128,7 +128,7 @@ impl Map {
         resolution: Vec2D<u32>,
         aspect_ratio: f32,
     ) {
-        let viewport = self.viewport.get_viewport(resolution);
+        let viewport = self.viewer.get_viewport(resolution, aspect_ratio);
         for pos in viewport.get_tiles() {
             let mut renderer_pos = pos;
             loop {
@@ -138,11 +138,15 @@ impl Map {
                         .unwrap();
                     // Breaks this while and requests the needed pos
                     break;
-                } else if let Some(pos) = renderer_pos.get_parent() {
-                    self.request_tile(&viewport, resolution,renderer_pos);
-                    renderer_pos = pos;
                 } else {
-                    break;
+                    if renderer_pos == pos {
+                        self.request_tile(&viewport, resolution, renderer_pos);
+                    }
+                    if let Some(pos) = renderer_pos.get_parent() {
+                        renderer_pos = pos;
+                    } else {
+                        break;
+                    }
                 }
             }
             // if self.graphics.contains_tile(pos) {
@@ -188,7 +192,6 @@ impl Map {
             let sender = self.new_tiles.0.clone();
             let view = viewport.view.any_unit();
             self.tokio.spawn(async move {
-                sleep(Duration::from_millis(500));
                 trace!("Querying map tile {pos:?}");
                 // TODO error handling
                 let tile = query.get(pos).await.unwrap();
