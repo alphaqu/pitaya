@@ -3,9 +3,11 @@ pub mod opening_app;
 
 use app::{AppLocation, AppPanel};
 use egui::style::Margin;
-use egui::{Context, Frame, Id, Rect, Ui, Vec2};
+use egui::{Context, Frame, Id, LayerId, Order, Pos2, Rect, Rounding, Sense, Stroke, Ui, Vec2};
+use egui::epaint::Shadow;
 use opening_app::{DraggingApp, OpenAppLocation};
 use ptya_common::apps::app::AppId;
+use ptya_common::settings::color::ColorType;
 use ptya_common::System;
 
 pub struct ContentPanel {
@@ -26,11 +28,11 @@ impl ContentPanel {
     pub fn update(&mut self, ctx: &Context, system: &mut System) {
         egui::CentralPanel::default()
             .frame(Frame {
-                inner_margin: Margin::same(25.0),
+                inner_margin: Margin::same(system.settings.layout.spacing_size),
                 outer_margin: Default::default(),
                 rounding: Default::default(),
                 shadow: Default::default(),
-                fill: system.settings.style.bg_body,
+                fill: system.settings.color.bg(0.0, ColorType::Primary),
                 stroke: Default::default(),
             })
             .show(ctx, |ui| {
@@ -42,46 +44,21 @@ impl ContentPanel {
                 self.update_primary(ui, system, content_rect);
                 self.update_widgets(ui, system);
 
-                // Set locations
-                //  {
-                //                     let spacings =
-                //                         JustifyList::horizontal(content_rect, system.settings.layout.content_margin)
-                //                             .apply(&[JustifyEntry { size: 1.0 }, JustifyEntry { size: 5.0 }]);
-                //
-                //                     let widgets = spacings[0];
-                //                     let entries: Vec<JustifyEntry> = self
-                //                         .apps
-                //                         .widgets
-                //                         .iter()
-                //                         .map(|_| JustifyEntry { size: 1.0 })
-                //                         .collect();
-                //
-                //                     JustifyList::horizontal(widgets, system.settings.layout.content_margin)
-                //                         .apply(&entries)
-                //                         .into_iter()
-                //                         .zip(self.apps.widgets.iter_mut())
-                //                         .for_each(|(rect, widget)| {
-                //                             widget.set_rect(rect, ui);
-                //                         });
-                //
-                //                     if let Some(primary) = &mut self.apps.primary {
-                //                         primary.set_rect(spacings[0], ui);
-                //                     }
-                //                 }
-
-                for widget in &mut self.apps.widgets {
-                    widget.draw(ui, system);
-                }
-
-                if let Some(primary) = &mut self.apps.primary {
-                    primary.draw(ui, system);
-                }
 
                 if let Some(dragged) = &mut self.dragging_app {
                     dragged.update(ui, system, &mut self.apps, content_rect);
                     if dragged.for_removal(ui) {
                         self.dragging_app = None;
                     }
+                }
+
+
+                for widget in &mut self.apps.widgets {
+                    widget.draw(ui, system, &mut self.dragging_app);
+                }
+
+                if let Some(primary) = &mut self.apps.primary {
+                    primary.draw(ui, system, &mut self.dragging_app);
                 }
 
                 self.apps.finalize();
@@ -92,7 +69,7 @@ impl ContentPanel {
         let widgets = self.apps.widgets.len() as f32;
         let rect = ui.max_rect();
         let widget_height =
-            (rect.height() - (system.settings.layout.content_margin * (widgets - 1.0))) / widgets;
+            (rect.height() - (system.settings.layout.spacing_size * (widgets - 1.0))) / widgets;
 
         let mut widget_rect = Rect::from_min_size(
             rect.min,
@@ -106,10 +83,10 @@ impl ContentPanel {
 
             let layout = &system.settings.layout;
             widget_rect =
-                widget_rect.translate(Vec2::new(0.0, layout.content_margin + widget_height));
+                widget_rect.translate(Vec2::new(0.0, layout.spacing_size + widget_height));
 
             if above_active {
-                current_widget_rect.min.y += (layout.widget_add_size + layout.content_margin) / 2.0;
+                current_widget_rect.min.y += (layout.widget_add_size + layout.spacing_size) / 2.0;
                 above_active = false;
             }
 
@@ -120,11 +97,11 @@ impl ContentPanel {
                     let top_rect = Rect::from_min_size(current_widget_rect.min, add_size);
                     #[rustfmt::skip]
                     if dragged.draw_possible_placement(ui, top_rect, true, OpenAppLocation::NewWidget(0),  system) {
-                        current_widget_rect.min.y += layout.widget_add_size + layout.content_margin;
+                        current_widget_rect.min.y += layout.widget_add_size + layout.spacing_size;
                     }
                 }
 
-                let mut add_space = layout.widget_add_size + layout.content_margin;
+                let mut add_space = layout.widget_add_size + layout.spacing_size;
                 if i != len - 1 {
                     // the one below will also correct
                     add_space /= 2.0;
@@ -159,7 +136,7 @@ impl ContentPanel {
         if !self.apps.widgets.is_empty() {
             // If there are widgets make the primary smaller to allow for the widgets to exist
             primary_rect.min.x += layout.widget_width;
-            primary_rect.min.x += layout.content_margin;
+            primary_rect.min.x += layout.spacing_size;
         } else if let Some(dragged) = &mut self.dragging_app {
             // If there no widgets but we are dragging a new app in.
             // Expand the area and allow the add widget button to exist.
@@ -167,7 +144,7 @@ impl ContentPanel {
             rect.set_width(layout.widget_add_size);
 
             if dragged.draw_possible_placement(ui, rect,self.apps.primary.is_some(),OpenAppLocation::FirstWidget, system) || self.apps.primary.is_none() {
-                primary_rect.min.x += layout.content_margin + layout.widget_add_size;
+                primary_rect.min.x += layout.spacing_size + layout.widget_add_size;
             }
         }
 

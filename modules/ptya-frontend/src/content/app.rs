@@ -1,9 +1,12 @@
-use egui::{Color32, Id, PaintCallback, Rect, Rounding, Sense, Stroke, Ui, Vec2};
+use crate::content::opening_app::DraggingApp;
+use egui::epaint::Shadow;
+use egui::{Color32, Id, LayerId, Order, PaintCallback, Rect, Rounding, Sense, Stroke, Ui, Vec2};
 use glium::framebuffer::{RenderBuffer, SimpleFrameBuffer};
 use glium::texture::UncompressedFloatFormat;
 use glium::Surface;
-use log::trace;
+use log::{debug, info, trace};
 use ptya_common::apps::app::{AppId, AppInstance};
+use ptya_common::settings::color::ColorType;
 use ptya_common::ui::animation::state::State;
 use ptya_common::ui::animation::transition::Transition;
 use ptya_common::System;
@@ -40,8 +43,14 @@ impl AppPanel {
         self.rect.set(ui, rect);
     }
 
-    pub fn draw(&mut self, ui: &mut Ui, system: &mut System) {
+    pub fn draw(
+        &mut self,
+        ui: &mut Ui,
+        system: &mut System,
+        dragging_app: &mut Option<DraggingApp>,
+    ) {
         let rect = self.rect.get(ui);
+        self.draw_indicator(ui, rect, system, dragging_app);
         ui.allocate_ui_at_rect(rect, |ui| {
             let app = system.apps.get_mut_app(&self.app_id);
             ui.set_clip_rect(rect);
@@ -84,56 +93,68 @@ impl AppPanel {
                 }
             }
         });
+    }
 
-        //  if let Some(app) = &self.app {
-        //             let opacity = if let Some(dragging_app) = dragging_app {
-        //                 1.0 - dragging_app.state.get(ui)
-        //             } else {
-        //                 1.0
-        //             };
-        //
-        //             let size = system.settings.layout.window_control_size;
-        //             let window_corner = (rect.right_top()) - Vec2::new(size.x, 0.0);
-        //             let control = Rect::from_min_size(window_corner, size);
-        //
-        //             ui.painter().rect(
-        //                 control,
-        //                 Rounding {
-        //                     nw: 0.0,
-        //                     ne: system.settings.rounding,
-        //                     sw: system.settings.rounding,
-        //                     se: 0.0,
-        //                 },
-        //                 Color32::lerp(Color32::TRANSPARENT, system.settings.style.bg_2, opacity),
-        //                 Stroke::none(),
-        //             );
-        //
-        //             let response = ui.interact(
-        //                 control,
-        //                 id.with("window_decorator").with(&self.app),
-        //                 Sense::click_and_drag(),
-        //             );
-        //
-        //             if self.dragging {
-        //                 println!("drag");
-        //                 if let Some(drag) = dragging_app {
-        //                     drag.tick_response(ui, &response);
-        //                 }
-        //             }
-        //
-        //             if response.clicked() {
-        //                 println!("click");
-        //                 *dragging_app = None;
-        //                 self.dragging = false;
-        //             } else if response.drag_started() && dragging_app.is_none() && opacity == 1.0 {
-        //                 println!("start");
-        //                 *dragging_app = Some(DraggingApp::new(ui, id, control, app.clone()));
-        //                 self.dragging = true;
-        //             } else if response.drag_released() {
-        //                 println!("release");
-        //                 self.dragging = false;
-        //             }
-        //         }
+    fn draw_indicator(
+        &mut self,
+        ui: &mut Ui,
+        rect: Rect,
+        system: &System,
+        dragging_app: &mut Option<DraggingApp>,
+    ) {
+        let right_top = rect.right_top();
+        let size = 50.0;
+        let spacing_s = system.settings.layout.spacing_size / 2.0;
+        let actual_right_top = right_top + Vec2::new(spacing_s, -spacing_s);
+        let rect = Rect::from_min_size(
+            actual_right_top - Vec2::new(size, 0.0),
+            Vec2::new(size, size),
+        );
+        let rounding = Rounding {
+            nw: 0.0,
+            ne: size / 2.0,
+            sw: size / 2.0,
+            se: 0.0
+        };
+
+        ui.painter().rect(
+            rect,
+            rounding,
+            system.settings.color.bg(4.0, ColorType::Primary),
+            Stroke::none(),
+        );
+        ui.painter().add(
+            Shadow {
+                extrusion: 10.0,
+                color: system.settings.color.shadow,
+            }
+            .tessellate(rect, rounding),
+        );
+
+        let response = ui.interact(
+            rect,
+            ui.id().with("app_indicator").with(self.app_id()),
+            Sense::click_and_drag(),
+        );
+
+        if response.clicked() {
+            self.mark_removal();
+            *dragging_app = None;
+        } else if !self.for_removal {
+            if let Some(dragged) = dragging_app {
+                if self.dragging {
+                    dragged.tick_response(ui, &response);
+                }
+            } else if response.drag_started() && !response.drag_released(){
+                info!("briuh");
+                debug!(target: "drag-app", "APP: {:?} SOURCE: App Thingie", self.app_id);
+                *dragging_app = Some(DraggingApp::new(ui, rect, self.app_id.clone()));
+                self.dragging = true;
+            } else {
+                self.dragging = false;
+            }
+        }
+
     }
 
     pub fn mark_removal(&mut self) {

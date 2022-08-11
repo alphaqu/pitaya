@@ -6,7 +6,9 @@ use egui::{
     pos2, Color32, ColorImage, Context, Frame, ImageData, Mesh, Rect, TextureHandle, Ui, Vec2,
 };
 use log::{debug, info};
+use egui::epaint::Shadow;
 use ptya_common::apps::app::{EGuiApplication, AppId};
+use ptya_common::settings::color::ColorType;
 use ptya_common::System;
 
 pub struct SidebarPanel {
@@ -26,18 +28,17 @@ impl SidebarPanel {
     pub fn update(&mut self, ctx: &Context, system: &System, content: &mut ContentPanel) {
         egui::SidePanel::new(Side::Left, "side_bar")
             .frame(Frame {
-                inner_margin: Margin::same(25.0),
+                inner_margin: Margin::same(system.settings.layout.spacing_size),
                 outer_margin: Default::default(),
                 rounding: Default::default(),
                 shadow: Default::default(),
-                fill: system.settings.style.bg_0,
+                fill: system.settings.color.bg(1.0, ColorType::Primary),
                 stroke: Default::default(),
             })
             .max_width(100.0)
             .resizable(false)
             .show(ctx, |ui| {
-                let width = ui.available_width();
-                let entry_size = Vec2::new(width, width);
+                let entry_size = Vec2::new(system.settings.layout.interactive_size, system.settings.layout.interactive_size);
 
                 for entry in &mut self.apps {
                     entry.update(ui, content, system, entry_size);
@@ -76,17 +77,22 @@ impl SidebarAppEntry {
 
         // Rect
         let painter = ui.painter();
-        painter.rect_filled(rect, 25.0, system.settings.style.bg_2);
+        let rounding = 25.0;
+       //painter.add(Shadow {
+       //    extrusion: 7.5,
+       //    color: system.settings.color.shadow,
+       //}.tessellate(rect, rounding));
+        painter.rect_filled(rect, rounding, system.settings.color.bg(3.0, ColorType::Primary));
 
         // Draw icon
         {
             let texture_id = system.apps.get_app(&self.app).icon_handle.id();
-            let icon = Rect::from_center_size(rect.center(), Vec2::new(70.0, 70.0));
+            let icon = Rect::from_center_size(rect.center(), Vec2::new(60.0, 60.0));
             let mut mesh = Mesh::with_texture(texture_id);
             mesh.add_rect_with_uv(
                 icon,
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-                Color32::WHITE,
+                system.settings.color.fg(ColorType::Neutral),
             );
             painter.add(mesh);
         }

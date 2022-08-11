@@ -305,6 +305,7 @@ impl Pitaya {
         //    ))),
         //));
 
+        let rounding = Rounding::same(f32::INFINITY);
         ctx.set_style(Style {
             text_styles: [
                 (TextStyle::Heading, FontId::new(90.0, Proportional)),
@@ -327,35 +328,35 @@ impl Pitaya {
                     noninteractive: WidgetVisuals {
                         bg_fill: system.settings.style.bg_2,
                         bg_stroke: Stroke::none(),
-                        rounding: Rounding::same(system.settings.rounding / 2.0),
+                        rounding: rounding,
                         fg_stroke: Stroke::new(1.0, system.settings.style.fg_2),
                         expansion: 0.0,
                     },
                     inactive: WidgetVisuals {
                         bg_fill: system.settings.style.bg_2,
                         bg_stroke: Stroke::new(0.5, system.settings.style.bg_2),
-                        rounding: Rounding::same(system.settings.rounding / 2.0),
+                        rounding: rounding,
                         fg_stroke: Stroke::new(1.0, system.settings.style.fg_4),
                         expansion: 0.0,
                     },
                     hovered: WidgetVisuals {
                         bg_fill: system.settings.style.bg_3,
                         bg_stroke: Stroke::new(1.0, system.settings.style.fg_0),
-                        rounding: Rounding::same(system.settings.rounding / 2.0),
+                        rounding: rounding,
                         fg_stroke: Stroke::new(1.0, system.settings.style.fg_5),
                         expansion: 0.0,
                     },
                     active: WidgetVisuals {
                         bg_fill: system.settings.style.bg_4,
                         bg_stroke: Stroke::new(1.0, system.settings.style.fg_2),
-                        rounding: Rounding::same(system.settings.rounding / 2.0),
+                        rounding: rounding,
                         fg_stroke: Stroke::new(1.0, system.settings.style.fg_5),
                         expansion: 0.0,
                     },
                     open: WidgetVisuals {
                         bg_fill: system.settings.style.bg_4,
                         bg_stroke: Stroke::new(1.0, system.settings.style.fg_2),
-                        rounding: Rounding::same(system.settings.rounding / 2.0),
+                        rounding: rounding,
                         fg_stroke: Stroke::new(1.0, system.settings.style.fg_5),
                         expansion: 0.0,
                     },

@@ -3,6 +3,7 @@ use crate::ui::button::Button;
 use crate::ui::field::Field;
 use crate::{EGuiApplication, app_icon, Settings};
 use egui::{Align2, Color32, FontId, Painter, Rect, Stroke, Ui, Widget};
+use crate::settings::color::ColorType;
 
 pub mod button;
 pub mod field;
@@ -33,7 +34,7 @@ impl EGuiApplication for WidgetApp {
     fn tick(&mut self, ui: &mut Ui, settings: &Settings) {
         let painter = ui.painter();
         let rect = ui.max_rect();
-        painter.rect(rect, 25.0, settings.style.bg_0, Stroke::none());
+        painter.rect(rect, 25.0, settings.color.bg(1.0, ColorType::Primary), Stroke::none());
         painter.text(
             rect.center(),
             Align2::CENTER_CENTER,

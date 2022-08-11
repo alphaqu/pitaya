@@ -34,7 +34,7 @@ impl<'a, 's> Widget for Field<'a, 's> {
 	    // why they use extreme? it looks like shit
 	    ui.style_mut().visuals.extreme_bg_color = self.settings.style.bg_2;
 	    let response = self.text
-		    .margin(self.settings.margin - Vec2::new(5.0, 5.0)).desired_width(400.0)
+		    .margin(Vec2::splat(self.settings.layout.spacing_size) - Vec2::new(5.0, 5.0)).desired_width(400.0)
 		    .font(FontSelection::Style(TextStyle::Body))
 		    .text_color(self.settings.style.fg_4)
 		    .ui(ui);

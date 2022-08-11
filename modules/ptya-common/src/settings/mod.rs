@@ -1,28 +1,36 @@
 use egui::Vec2;
+use crate::settings::color::ColorSettings;
 use crate::StyleSettings;
 
 pub mod style;
+pub mod color;
 
 pub struct Settings {
 	pub max_widgets: usize,
-	pub rounding: f32,
-	pub margin: Vec2,
 
+	#[deprecated]
 	pub style: StyleSettings,
+	pub color: ColorSettings,
 	pub layout: LayoutSettings,
 }
 
 pub struct LayoutSettings {
-	pub keyboard_size: f32,
-	
-	pub button_rounding: f32,
-	pub button_padding: Vec2,
-	
-	pub window_control_size: Vec2,
-	
-	pub content_margin: f32,
+	pub spacing_size: f32,
+	pub rounding_size: f32,
+	pub interactive_size: f32,
+
 	pub widget_width: f32,
 	pub widget_add_size: f32,
-	#[deprecated]
-	pub widget_padding: f32
+}
+
+impl LayoutSettings {
+	pub fn new() -> LayoutSettings {
+		LayoutSettings {
+			spacing_size: 20.0,
+			rounding_size: 25.0,
+			interactive_size: 110.0,
+			widget_width: 440.0,
+			widget_add_size: 150.0,
+		}
+	}
 }

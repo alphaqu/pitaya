@@ -1,5 +1,5 @@
 use crate::Settings;
-use egui::{epaint::TextShape, Color32, Response, Sense, Stroke, TextStyle, Ui, Vec2, Widget, WidgetText, RichText};
+use egui::{epaint::TextShape, Color32, Response, Sense, Stroke, TextStyle, Ui, Vec2, Widget, WidgetText, RichText, Rounding};
 
 pub struct Button<'a> {
     pub text: WidgetText,
@@ -17,18 +17,20 @@ impl<'a> Button<'a> {
 
 impl<'a> Widget for Button<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
-	    let padding = self.settings.layout.button_padding;
         let text = self
             .text
             .into_galley(ui, None, f32::INFINITY, TextStyle::Button);
-
         let size = text.size();
+	    let spacing = self.settings.layout.spacing_size;
         let (rect, response) = ui.allocate_at_least(
-            size + (padding * 2.0) + (self.settings.margin * 2.0),
+            Vec2::new(
+	            self.settings.layout.interactive_size + size.x + spacing,
+	            self.settings.layout.interactive_size + spacing
+            ),
             Sense::click_and_drag(),
         );
 
-        let rect = rect.shrink2(self.settings.margin);
+        let rect = rect.shrink(spacing);
         let painter = ui.painter();
 
 	    let visuals = ui.style().interact(&response);
@@ -39,7 +41,7 @@ impl<'a> Widget for Button<'a> {
 		    Stroke::none()
 	    };
 
-	    painter.rect(rect, self.settings.layout.button_rounding, visuals.bg_fill, visuals.bg_stroke);
+	    painter.rect(rect, Rounding::same(f32::INFINITY), visuals.bg_fill, visuals.bg_stroke);
 
 	    let text_color = if ui.is_enabled() {
 		    self.settings.style.fg_4
@@ -47,9 +49,8 @@ impl<'a> Widget for Button<'a> {
 		    self.settings.style.fg_2
 	    };
 
-        let pos = rect.left_top() + Vec2::new(padding.x, padding.y);
         painter.add(TextShape {
-            pos,
+            pos: rect.center(),
             galley: text.galley,
             underline: Default::default(),
             override_text_color: Some(text_color),

@@ -9,6 +9,7 @@ use tokio::time::Instant;
 use settings::{LayoutSettings, Settings};
 use crate::apps::app::EGuiApplication;
 use crate::apps::Apps;
+use crate::settings::color::ColorSettings;
 use crate::settings::style::StyleSettings;
 
 pub mod apps;
@@ -37,20 +38,11 @@ impl System {
 			runtime: Arc::new( Runtime::new().unwrap()),
 			settings: Settings {
 				max_widgets: 3,
-				rounding: 25.0,
-				margin: Vec2::new(25.0, 25.0),
+				//rounding: 25.0,
+				//margin: Vec2::new(25.0, 25.0),
 				style: theme,
-				layout: LayoutSettings {
-					keyboard_size: 0.0,
-					button_rounding: 50.0,
-					button_padding: Vec2::new(35.0, 35.0 / 2.0),
-					window_control_size: Vec2::new(60.0, 60.0),
-
-					content_margin: 25.0,
-					widget_width: 440.0,
-					widget_add_size: 150.0,
-					widget_padding: 50.0
-				}
+				color: ColorSettings::default(),
+				layout: LayoutSettings::new(),
 			},
 			apps: Apps::new()
 		}
