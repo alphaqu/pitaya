@@ -1,16 +1,17 @@
 use crate::content::opening_app::DraggingApp;
 use egui::epaint::Shadow;
-use egui::{Color32, Id, LayerId, Order, PaintCallback, Rect, Rounding, Sense, Stroke, Ui, Vec2};
-use glium::framebuffer::{RenderBuffer, SimpleFrameBuffer};
+use egui::{Color32, Id, LayerId, Order, PaintCallback, Rect, Rgba, Rounding, Sense, Stroke, Ui, Vec2};
+use glium::framebuffer::{RenderBuffer, SimpleFrameBuffer, ToColorAttachment};
 use glium::texture::UncompressedFloatFormat;
 use glium::Surface;
 use log::{debug, info, trace};
-use ptya_common::apps::app::{AppId, AppInstance};
-use ptya_common::settings::color::ColorType;
 use ptya_common::ui::animation::state::State;
 use ptya_common::ui::animation::transition::Transition;
 use ptya_common::System;
 use std::rc::Rc;
+use ptya_common::app::AppId;
+use ptya_common::color::color::{ColorState, ColorType};
+use ptya_common::settings::SPACING_SIZE;
 
 #[derive(Debug, Copy, Clone, Hash)]
 pub enum AppLocation {
@@ -52,46 +53,50 @@ impl AppPanel {
         let rect = self.rect.get(ui);
         self.draw_indicator(ui, rect, system, dragging_app);
         ui.allocate_ui_at_rect(rect, |ui| {
-            let app = system.apps.get_mut_app(&self.app_id);
+            let mut guard = system.app.write().unwrap();
+            let app = guard.get_mut_app(&self.app_id);
             ui.set_clip_rect(rect);
-            match &mut app.app {
-                AppInstance::EGui(egui) => {
-                    egui.tick(ui, &system.settings);
-                }
-                AppInstance::OpenGL { ctx, buffer, app } => {
-                    let (width, height) = buffer.get_dimensions();
-                    if rect.width() as u32 != width || rect.height() as u32 != height {
-                        *buffer = Rc::new(
-                            RenderBuffer::new(
-                                ctx,
-                                UncompressedFloatFormat::U8U8U8U8,
-                                rect.width() as u32,
-                                rect.height() as u32,
-                            )
-                            .unwrap(),
-                        );
-                    }
-
-                    {
-                        let rc = (*buffer).as_ref();
-                        let mut fb = SimpleFrameBuffer::new(ctx, rc).unwrap();
-                        let color32 = system.settings.style.bg_2;
-                        fb.clear_color(
-                            color32.r() as f32 / 255.0,
-                            color32.g() as f32 / 255.0,
-                            color32.b() as f32 / 255.0,
-                            color32.a() as f32 / 255.0,
-                        );
-                        app.tick(ui, ctx, &mut fb, rect, &system.settings);
-                    }
-
-                    let framebuffer = buffer.clone();
-                    ui.painter().add(PaintCallback {
-                        rect,
-                        callback: framebuffer,
-                    });
-                }
-            }
+            app.tick(ui, &system.gl_ctx, rect, system);
+            
+            //  match &mut app.app {
+            //                 AppInstance::EGui(egui) => {
+            //                     egui.tick(ui, &system.settings);
+            //                 }
+            //                 AppInstance::OpenGL { ctx, buffer, app } => {
+            //                     let (width, height) = buffer.get_dimensions();
+            //                     if rect.width() as u32 != width || rect.height() as u32 != height {
+            //                         *buffer = Rc::new(
+            //                             RenderBuffer::new(
+            //                                 ctx,
+            //                                 UncompressedFloatFormat::U8U8U8U8,
+            //                                 rect.width() as u32,
+            //                                 rect.height() as u32,
+            //                             )
+            //                                 .unwrap(),
+            //                         );
+            //                     }
+            //
+            //                     {
+            //                         let rc = (*buffer).as_ref();
+            //                         let mut fb = SimpleFrameBuffer::new(ctx, rc).unwrap();
+            //                         let color32: Rgba = system.color.bg(2.0, ColorType::Primary).into();
+            //                         let srgba = color32.to_rgba_unmultiplied();
+            //                         fb.clear_color_srgb(
+            //                             srgba[0],
+            //                             srgba[1],
+            //                             srgba[2],
+            //                             srgba[3],
+            //                         );
+            //                         app.tick(ui, ctx, &mut fb, rect, &system.settings);
+            //                     }
+            //
+            //                     let framebuffer = buffer.clone();
+            //                     ui.painter().add(PaintCallback {
+            //                         rect,
+            //                         callback: framebuffer,
+            //                     });
+            //                 }
+            //             }
         });
     }
 
@@ -104,7 +109,7 @@ impl AppPanel {
     ) {
         let right_top = rect.right_top();
         let size = 50.0;
-        let spacing_s = system.settings.layout.spacing_size / 2.0;
+        let spacing_s = SPACING_SIZE / 2.0;
         let actual_right_top = right_top + Vec2::new(spacing_s, -spacing_s);
         let rect = Rect::from_min_size(
             actual_right_top - Vec2::new(size, 0.0),
@@ -117,25 +122,25 @@ impl AppPanel {
             se: 0.0
         };
 
-        ui.painter().rect(
-            rect,
-            rounding,
-            system.settings.color.bg(4.0, ColorType::Primary),
-            Stroke::none(),
-        );
-        ui.painter().add(
-            Shadow {
-                extrusion: 10.0,
-                color: system.settings.color.shadow,
-            }
-            .tessellate(rect, rounding),
-        );
-
         let response = ui.interact(
             rect,
             ui.id().with("app_indicator").with(self.app_id()),
             Sense::click_and_drag(),
         );
+
+
+        let state = ColorState::new(&response);
+        ui.painter().rect(
+            rect,
+            rounding,
+            system.color.bg(4.0, ColorType::Primary, state),
+            Stroke::none(),
+        );
+        ui.painter().add(
+            system.color.shadow()
+            .tessellate(rect, rounding),
+        );
+
 
         if response.clicked() {
             self.mark_removal();

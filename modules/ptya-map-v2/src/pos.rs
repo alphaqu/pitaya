@@ -4,8 +4,8 @@ use crate::unit::MapUnit;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub struct TilePosition {
 	pub zoom: Zoom,
-	pub x: u32,
-	pub y: u32,
+	pub x: u64,
+	pub y: u64,
 }
 
 impl TilePosition {
@@ -24,18 +24,18 @@ impl TilePosition {
 
 	/// Gets the position of the tile in Map Space
 	#[inline(always)]
-	pub fn get_pos(&self) -> Vec2D<f32, MapUnit> {
+	pub fn get_pos(&self) -> Vec2D<f64, MapUnit> {
 		let num_tiles = self.zoom.get_num_tiles();
 		Vec2D::new(
-			self.x as f32 / num_tiles as f32,
-			self.y as f32 / num_tiles as f32,
+			self.x as f64 / num_tiles as f64,
+			self.y as f64 / num_tiles as f64,
 		)
 	}
 
 	/// Gets the size of the tile in Map Space
 	#[inline(always)]
-	pub fn get_size(&self) -> Vec2D<f32, MapUnit> {
-		let size = 1.0 / self.zoom.get_num_tiles() as f32;
+	pub fn get_size(&self) -> Vec2D<f64, MapUnit> {
+		let size = 1.0 / self.zoom.get_num_tiles() as f64;
 		Vec2D::new(
 			size,
 			size
@@ -44,7 +44,7 @@ impl TilePosition {
 	
 	/// Gets the rectangle that this tile covers in map space.
 	#[inline(always)]
-	pub fn get_rect(&self) -> Rect<f32, MapUnit> {
+	pub fn get_rect(&self) -> Rect<f64, MapUnit> {
 		Rect::new_u(
 			self.get_pos(),
 			self.get_size(),
@@ -109,8 +109,8 @@ impl Zoom {
 	}
 
 	#[inline(always)]
-	pub const fn get_num_tiles(&self) -> u32 {
-		2u32.pow(self.zoom as u32)
+	pub const fn get_num_tiles(&self) -> u64 {
+		2u64.pow(self.zoom as u32)
 	}
 }
 

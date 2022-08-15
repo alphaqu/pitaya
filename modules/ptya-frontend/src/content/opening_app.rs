@@ -2,8 +2,9 @@ use crate::content::app::AppLocation;
 use crate::content::{ContentApps, ContentPanel};
 use egui::{pos2, Color32, Id, LayerId, Mesh, Order, Pos2, Rect, Response, Stroke, TextureId, Ui, Vec2, Rounding, Align2, FontId};
 use log::info;
-use ptya_common::apps::app::AppId;
-use ptya_common::settings::color::ColorType;
+use ptya_common::app::AppId;
+use ptya_common::color::color::{ColorState, ColorType};
+use ptya_common::settings::SPACING_SIZE;
 use ptya_common::ui::animation::state::State;
 use ptya_common::ui::animation::transition::Transition;
 use ptya_common::System;
@@ -102,30 +103,29 @@ impl DraggingApp {
             .ctx()
             .layer_painter(LayerId::new(Order::Tooltip, Id::null()));
 
+        let state = ColorState::Idle;
         painter.rect(
             rect,
             Rounding::same(32.0),
             self.state
-                .lerp(ui, &Color32::TRANSPARENT, &system.settings.color.bg(5.0, ColorType::Secondary)),
+                .lerp(ui, &Color32::TRANSPARENT, &system.color.bg(5.0, ColorType::Secondary, state)),
             Stroke::none(),
         );
         {
-            let app = system.apps.get_app(&self.app);
-            let texture_id = app.icon_handle.id();
+            //let app = system.app.get_app(&self.app);
+            //let texture_id = app.icon_handle.id();
             let size = rect.size().min(Vec2::new(60.0, 60.0));
-          //  let side_space = 30.0 + system.settings.layout.spacing_size;
-            //let icon = Rect::from_center_size(rect.left_top() + Vec2::new(side_space, side_space), size);
             let icon = Rect::from_center_size(rect.center(), size);
-            let mut mesh = Mesh::with_texture(texture_id);
-            let color = self.state.lerp(ui, &Color32::TRANSPARENT, &system.settings.color.fg(ColorType::Neutral));
-            mesh.add_rect_with_uv(
-                icon,
-                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-                color,
-            );
-            painter.add(mesh);
+         //  let mut mesh = Mesh::with_texture(texture_id);
+         //  let color = self.state.lerp(ui, &Color32::TRANSPARENT, &system.color.fg(ColorType::Neutral, state));
+         //  mesh.add_rect_with_uv(
+         //      icon,
+         //      Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+         //      color,
+         //  );
+         //  painter.add(mesh);
 
-            let left_space = 60.0 + (system.settings.layout.spacing_size * 2.0);
+            let left_space = 60.0 + (SPACING_SIZE * 2.0);
 
           //  painter.text(rect.left_top() + Vec2::new(left_space, side_space), Align2::LEFT_CENTER, &app.info.name, FontId::proportional(30.0), color);
         }
@@ -149,11 +149,11 @@ impl DraggingApp {
         let id = ui.id().with("possible_placement").with(location);
 
         let touches = rect
-            .expand(system.settings.layout.spacing_size / 2.0)
+            .expand(SPACING_SIZE / 2.0)
             .contains(self.pos);
 
-        let mut hover_state = State::new(id, if touches && !self.released { 1.0 } else { 0.0 }, ui);
-        let color = system.settings.color.bg(5.0, ColorType::Primary);
+        let mut hover_state = State::new(id, if touches && !self.released { 1.0 } else { 0.0 }, 1.0, ui);
+        let color = system.color.bg(5.0, ColorType::Primary, ColorState::Idle);
 
         let from_color = if !hidden {
             color.linear_multiply(0.5)

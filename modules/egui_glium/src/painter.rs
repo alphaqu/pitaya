@@ -1,15 +1,28 @@
 #![allow(deprecated)] // legacy implement_vertex macro
 #![allow(semicolon_in_expressions_from_macros)] // glium::program! macro
 
-use std::any::Any;
-use std::sync::Arc;
-use egui::epaint::Primitive;
-use egui::PaintCallbackInfo;
+use egui::epaint::{ClippedShape, Primitive, RectShape};
+use egui::{ClippedPrimitive, Color32, PaintCallbackInfo, pos2, Rounding, Shape, TextureId};
 use glium::backend::Facade;
+use glium::buffer::{Buffer, BufferCreationError, BufferMode, BufferType, Content};
 use glium::framebuffer::{EmptyFrameBuffer, RenderBuffer, SimpleFrameBuffer};
-use glium::{BlitTarget, Surface};
 use glium::texture::UncompressedFloatFormat;
-use log::warn;
+use glium::uniforms::Sampler;
+use glium::{BlitTarget, GlObject, IndexBuffer, Surface, VertexBuffer};
+use log::{info, warn};
+use std::any::Any;
+use std::mem::swap;
+use std::ops::Range;
+use std::sync::Arc;
+use std::vec::Drain;
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    a_pos: [f32; 2],
+    a_tc: [f32; 2],
+    a_srgba: [u8; 4],
+}
 
 use {
     ahash::AHashMap,
@@ -29,6 +42,8 @@ pub struct Painter {
     program: glium::Program,
 
     textures: AHashMap<egui::TextureId, Rc<SrgbTexture2d>>,
+    vertices: glium::VertexBuffer<Vertex>,
+    indices: glium::IndexBuffer<u32>,
 
     /// [`egui::TextureId::User`] index
     next_native_tex_id: u64,
@@ -64,7 +79,9 @@ impl Painter {
             max_texture_side,
             program,
             textures: Default::default(),
-            next_native_tex_id: 0,
+            vertices: VertexBuffer::empty_dynamic(facade, 0).unwrap(),
+            indices: IndexBuffer::empty_dynamic(facade, PrimitiveType::TrianglesList, 0).unwrap(),
+            next_native_tex_id: 1,
         }
     }
 
@@ -74,6 +91,7 @@ impl Painter {
 
     pub fn paint_and_update_textures<T: glium::Surface>(
         &mut self,
+        egui: &egui::Context,
         display: &glium::Display,
         target: &mut T,
         pixels_per_point: f32,
@@ -84,7 +102,15 @@ impl Painter {
             self.set_texture(display, *id, image_delta);
         }
 
-        self.paint_primitives(display, target, pixels_per_point, clipped_primitives);
+        self.paint_primitives(
+            egui,
+            display,
+            target,
+            0.0,
+            0.0,
+            pixels_per_point,
+            clipped_primitives,
+        );
 
         for &id in &textures_delta.free {
             self.free_texture(id);
@@ -96,10 +122,13 @@ impl Painter {
     /// and `target.finish()` after this.
     pub fn paint_primitives<T: glium::Surface>(
         &mut self,
+        egui: &egui::Context,
         display: &glium::Display,
         target: &mut T,
+        x: f32,
+        y: f32,
         pixels_per_point: f32,
-        clipped_primitives: Vec<egui::ClippedPrimitive>,
+        clipped_primitives: Vec<ClippedPrimitive>,
     ) {
         for egui::ClippedPrimitive {
             clip_rect,
@@ -110,12 +139,10 @@ impl Painter {
                 Primitive::Mesh(mesh) => {
                     self.paint_mesh(target, display, pixels_per_point, &clip_rect, &mesh);
                 }
-                Primitive::Callback(mut callback) => {
+                Primitive::Callback(callback) => {
                     if callback.rect.is_positive() {
-                        let (width_in_pixels, height_in_pixels) = display.get_framebuffer_dimensions();
-
-                        let width_in_points = width_in_pixels as f32 / pixels_per_point;
-                        let height_in_points = height_in_pixels as f32 / pixels_per_point;
+                        let (width_in_pixels, height_in_pixels) =
+                            display.get_framebuffer_dimensions();
 
                         // Transform callback rect to physical pixels:
                         let rect_min_x = pixels_per_point * callback.rect.min.x;
@@ -129,26 +156,83 @@ impl Painter {
                         let rect_max_y = rect_max_y.round() as i32;
 
                         {
-                            if let Some(value) = callback.callback.downcast_ref::<RenderBuffer>() {
-                                let height = (rect_max_y - rect_min_y) as i32;
-                                target.blit_from_simple_framebuffer(
-                                    &SimpleFrameBuffer::new(display, value).unwrap(),
-                                    &glium::Rect  {
-                                        left: 0,
-                                        bottom: 0,
-                                        width: callback.rect.width() as u32,
-                                        height: callback.rect.height() as u32,
-                                    },
-                                    &BlitTarget {
-                                        left: rect_min_x as u32,
-                                      //  bottom: (((height_in_pixels as i32 - rect_max_y) + height) as u32) ,
-                                        bottom: rect_min_y as u32,
-                                        width: (rect_max_x - rect_min_x) as i32,
-                                       // height: (-height),
-                                        height:(rect_max_y - rect_min_y) as i32,
-                                    },
-                                    MagnifySamplerFilter::Linear
-                                );
+                            if let Some(buffer) = callback
+                                .callback
+                                .downcast_ref::<(Rc<SrgbTexture2d>, Rounding)>()
+                            {
+                                if let Some(ClippedPrimitive {
+                                    clip_rect,
+                                    primitive: Primitive::Mesh(mut mesh),
+                                }) = egui
+                                    .tessellate(vec![ClippedShape(
+                                        clip_rect,
+                                        Shape::Rect(RectShape {
+                                            rect: callback.rect,
+                                            rounding: buffer.1,
+                                            fill: Color32::WHITE,
+                                            stroke: Default::default(),
+                                        }),
+                                    )])
+                                    .pop()
+                                {
+                                    let texture_id = TextureId::User(0);
+                                    mesh.texture_id = texture_id;
+                                    for vertex in &mut mesh.vertices {
+                                        let pos = ((vertex.pos - clip_rect.min) / clip_rect.size()).to_pos2();
+                                        vertex.uv = pos2(pos.x, 1.0 - pos.y);
+                                    }
+                                    self.textures.insert(texture_id, buffer.0.clone());
+                                    self.paint_mesh(target, display, pixels_per_point, &clip_rect, &mesh);
+                                    self.textures.remove(&texture_id);
+
+                                    //let buffer = &*buffer.0;
+                                    //let mut source =
+                                    //    SimpleFrameBuffer::new(display, &buffer).unwrap();
+//
+                                    //target.blit_from_simple_framebuffer(
+                                    //    &source,
+                                    //    &glium::Rect {
+                                    //        left: 0,
+                                    //        bottom: 0,
+                                    //        width: buffer.width(),
+                                    //        height: buffer.height(),
+                                    //    },
+                                    //    &BlitTarget {
+                                    //        left: rect_min_x as u32,
+                                    //        //  bottom: (((height_in_pixels as i32 - rect_max_y) + height) as u32) ,
+                                    //        bottom: rect_min_y as u32,
+                                    //        width: buffer.width() as i32,
+                                    //        // height: (-height),
+                                    //        height: buffer.height() as i32,
+                                    //    },
+                                    //    MagnifySamplerFilter::Nearest,
+                                    //);
+                                }
+                            } else if let Ok(value) =
+                                callback
+                                    .callback
+                                    .downcast::<(Rc<SrgbTexture2d>, Vec<ClippedShape>)>()
+                            {
+                                if let Ok((buffer, mut shapes)) = Rc::try_unwrap(value) {
+                                    let mut source =
+                                        SimpleFrameBuffer::new(display, &*buffer).unwrap();
+
+                                    for x in &mut shapes {
+                                        x.1.translate(-callback.rect.min.to_vec2());
+                                        x.0 = x.0.translate(-callback.rect.min.to_vec2());
+                                    }
+                                    // egui.input_mut().pixels_per_point = 1.0;
+                                    self.paint_primitives(
+                                        egui,
+                                        display,
+                                        &mut source,
+                                        callback.rect.min.x,
+                                        callback.rect.min.y,
+                                        pixels_per_point,
+                                        egui.tessellate(shapes),
+                                    );
+                                    // egui.input_mut().pixels_per_point = old;
+                                }
                             }
                         }
                     }
@@ -169,33 +253,43 @@ impl Painter {
         debug_assert!(mesh.is_valid());
 
         let vertex_buffer = {
-            #[repr(C)]
-            #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-            struct Vertex {
-                a_pos: [f32; 2],
-                a_tc: [f32; 2],
-                a_srgba: [u8; 4],
-            }
             implement_vertex!(Vertex, a_pos, a_tc, a_srgba);
 
             let vertices: &[Vertex] = bytemuck::cast_slice(&mesh.vertices);
 
-            // TODO(emilk): we should probably reuse the [`VertexBuffer`] instead of allocating a new one each frame.
-            glium::VertexBuffer::new(display, vertices).unwrap()
+            Self::upload(
+                display,
+                vertices,
+                &mut *self.vertices,
+                BufferType::ArrayBuffer,
+            )
+            .unwrap();
+            self.vertices.slice(0..vertices.len()).unwrap()
         };
 
-        // TODO(emilk): we should probably reuse the [`IndexBuffer`] instead of allocating a new one each frame.
-        let index_buffer =
-            glium::IndexBuffer::new(display, PrimitiveType::TrianglesList, &mesh.indices).unwrap();
+        let index_buffer = {
+            Self::upload(
+                display,
+                &mesh.indices,
+                &mut *self.indices,
+                BufferType::ElementArrayBuffer,
+            )
+            .unwrap();
+            self.indices.slice(0..mesh.indices.len()).unwrap()
+        };
 
-        let (width_in_pixels, height_in_pixels) = display.get_framebuffer_dimensions();
+        let (width_in_pixels, height_in_pixels) = target.get_dimensions();
         let width_in_points = width_in_pixels as f32 / pixels_per_point;
         let height_in_points = height_in_pixels as f32 / pixels_per_point;
 
         if let Some(texture) = self.get_texture(mesh.texture_id) {
             // The texture coordinates for text are so that both nearest and linear should work with the egui font texture.
             // For user textures linear sampling is more likely to be the right choice.
-            let filter = MagnifySamplerFilter::Linear;
+            let filter =  if mesh.texture_id == TextureId::User(0) {
+                MagnifySamplerFilter::Nearest
+            } else {
+                MagnifySamplerFilter::Linear
+            };
 
             let uniforms = uniform! {
                 u_screen_size: [width_in_points, height_in_points],
@@ -225,10 +319,10 @@ impl Painter {
             let backface_culling = glium::BackfaceCullingMode::CullingDisabled;
 
             // Transform clip rect to physical pixels:
-            let clip_min_x = pixels_per_point * clip_rect.min.x;
-            let clip_min_y = pixels_per_point * clip_rect.min.y;
-            let clip_max_x = pixels_per_point * clip_rect.max.x;
-            let clip_max_y = pixels_per_point * clip_rect.max.y;
+            let clip_min_x = pixels_per_point * (clip_rect.min.x);
+            let clip_min_y = pixels_per_point * (clip_rect.min.y);
+            let clip_max_x = pixels_per_point * (clip_rect.max.x);
+            let clip_max_y = pixels_per_point * (clip_rect.max.y);
 
             // Make sure clip rect can fit within a `u32`:
             let clip_min_x = clip_min_x.clamp(0.0, width_in_pixels as f32);
@@ -236,8 +330,8 @@ impl Painter {
             let clip_max_x = clip_max_x.clamp(clip_min_x, width_in_pixels as f32);
             let clip_max_y = clip_max_y.clamp(clip_min_y, height_in_pixels as f32);
 
-            let clip_min_x = clip_min_x.round() as u32;
-            let clip_min_y = clip_min_y.round() as u32;
+            let clip_min_x = (clip_min_x).round() as u32;
+            let clip_min_y = (clip_min_y).round() as u32;
             let clip_max_x = clip_max_x.round() as u32;
             let clip_max_y = clip_max_y.round() as u32;
 
@@ -255,8 +349,8 @@ impl Painter {
 
             target
                 .draw(
-                    &vertex_buffer,
-                    &index_buffer,
+                    vertex_buffer,
+                    index_buffer,
                     &self.program,
                     &uniforms,
                     &params,
@@ -315,6 +409,25 @@ impl Painter {
                 SrgbTexture2d::with_format(facade, glium_image, format, mipmaps).unwrap();
             self.textures.insert(tex_id, gl_texture.into());
         }
+    }
+
+    fn upload<T>(
+        facade: &dyn Facade,
+        data: &[T],
+        buffer: &mut Buffer<[T]>,
+        ty: BufferType,
+    ) -> Result<(), BufferCreationError>
+    where
+        T: Copy,
+        [T]: Content,
+    {
+        if let Some(slice) = buffer.slice_mut(0..data.len()) {
+            slice.write(data);
+        } else {
+            // expand buffer
+            *buffer = Buffer::new(facade, data, ty, BufferMode::Dynamic)?;
+        }
+        Ok(())
     }
 
     pub fn free_texture(&mut self, tex_id: egui::TextureId) {

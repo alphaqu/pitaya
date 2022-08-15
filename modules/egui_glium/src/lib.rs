@@ -93,6 +93,7 @@ impl EguiGlium {
         let textures_delta = std::mem::take(&mut self.textures_delta);
         let clipped_primitives = self.egui_ctx.tessellate(shapes);
         self.painter.paint_and_update_textures(
+            &self.egui_ctx,
             display,
             target,
             self.egui_ctx.pixels_per_point(),

@@ -152,7 +152,7 @@ impl Painter {
 
 /// ## Low level
 impl Painter {
-    fn paint_list(&self) -> RwLockWriteGuard<'_, PaintList> {
+    pub fn paint_list(&self) -> RwLockWriteGuard<'_, PaintList> {
         RwLockWriteGuard::map(self.ctx.graphics(), |g| g.list(self.layer_id))
     }
 

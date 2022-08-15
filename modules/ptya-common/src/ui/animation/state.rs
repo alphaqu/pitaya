@@ -1,8 +1,8 @@
-use crate::settings::style::ANIMATION_TIME;
 use crate::ui::animation::lerp::Lerp;
 use crate::ui::animation::ContextHolder;
 use egui::{Id};
 use log::{debug, trace};
+use crate::settings::ANIMATION_TIME;
 
 #[non_exhaustive]
 pub struct State {
@@ -14,14 +14,14 @@ pub struct State {
 
 impl State {
     pub fn basic(id: Id, ctx: &impl ContextHolder) -> State {
-        State::new(id, 1.0, ctx)
+        State::new(id, 1.0, 1.0, ctx)
     }
 
-    pub fn new(id: Id, to: f32, ctx: &impl ContextHolder) -> State {
+    pub fn new(id: Id, to: f32, speed: f32, ctx: &impl ContextHolder) -> State {
         let mut state = State {
             id,
             target: -1.0,
-            speed: 1.0,
+            speed:speed,
             is_done: false,
         };
         state.set_target(ctx, to);

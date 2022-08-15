@@ -64,7 +64,7 @@ pub struct Memory {
     // ------------------------------------------
     /// new scale that will be applied at the start of the next frame
     #[cfg_attr(feature = "persistence", serde(skip))]
-    pub(crate) new_pixels_per_point: Option<f32>,
+    pub new_pixels_per_point: Option<f32>,
 
     /// new fonts that will be applied at the start of the next frame
     #[cfg_attr(feature = "persistence", serde(skip))]
@@ -79,7 +79,7 @@ pub struct Memory {
     #[cfg_attr(feature = "persistence", serde(skip))]
     pub(crate) drag_value: crate::widgets::drag_value::MonoState,
 
-    pub(crate) areas: Areas,
+    pub areas: Areas,
 
     /// Which popup-window is open (if any)?
     /// Could be a combo box, color picker, menu etc.
@@ -502,20 +502,20 @@ pub struct Areas {
 }
 
 impl Areas {
-    pub(crate) fn count(&self) -> usize {
+    pub fn count(&self) -> usize {
         self.areas.len()
     }
 
-    pub(crate) fn get(&self, id: Id) -> Option<&area::State> {
+    pub fn get(&self, id: Id) -> Option<&area::State> {
         self.areas.get(&id)
     }
 
     /// Back-to-front. Top is last.
-    pub(crate) fn order(&self) -> &[LayerId] {
+    pub fn order(&self) -> &[LayerId] {
         &self.order
     }
 
-    pub(crate) fn set_state(&mut self, layer_id: LayerId, state: area::State) {
+    pub fn set_state(&mut self, layer_id: LayerId, state: area::State) {
         self.visible_current_frame.insert(layer_id);
         self.areas.insert(layer_id.id, state);
         if !self.order.iter().any(|x| *x == layer_id) {

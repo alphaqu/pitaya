@@ -1,14 +1,13 @@
 use std::collections::VecDeque;
 use std::time::Instant;
 
-use atlas::geometry::path::PathGeometry;
+use atlas::geometry::path::{MultiPathGeometry, PathGeometry};
 use fxhash::FxHashMap;
 use mathie::Vec2D;
 use protobuf::Message;
-use atlas::feature::{FeatureData, FeatureFields};
+use atlas::geometry::fill::{MultiPolygonGeometry, PolygonGeometry};
 use atlas::geometry::GeometryData;
-use atlas::layer::LayerData;
-use atlas::tile::TileData;
+use atlas::data::{FeatureData, LayerData, TileData};
 
 mod parsing {
     include!(concat!(env!("OUT_DIR"), "/protobuf/mod.rs"));
@@ -18,8 +17,8 @@ const UNIT_SCALE: f32 = 4096.0;
 
 enum Geometry {
     Point { pos: Vec<Vec2D<f32>> },
-    Line(PathGeometry),
-    Polygon { polygons: Vec<Polygon> },
+    Line(MultiPathGeometry),
+    Polygon(MultiPolygonGeometry),
 }
 
 struct Point {
@@ -68,10 +67,12 @@ impl Geometry {
                         }
                     }
 
-                    paths.push(points);
+                    paths.push(PathGeometry {
+                        points
+                    });
                 }
 
-                Some(Geometry::Line(PathGeometry { paths }))
+                Some(Geometry::Line(MultiPathGeometry { paths }))
             }
             GeomType::Polygon => {
                 let mut deque = VecDeque::from_iter(commands);
@@ -79,7 +80,7 @@ impl Geometry {
                 let mut y = 0f32;
                 
                 let mut polygons = Vec::new();    
-                let mut current_polygon = Polygon {
+                let mut current_polygon = PolygonGeometry {
                     outer: vec![],
                     inner: vec![],
                 };
@@ -103,10 +104,9 @@ impl Geometry {
                     if let Some(Command::ClosePath) = deque.pop_front() {
                         points.push(start);
                         if shoelace(&points) > 0.0 {
-                            current_polygon.outer = points;
                             polygons.push(current_polygon);
-                            current_polygon = Polygon {
-                                outer: vec![],
+                            current_polygon = PolygonGeometry {
+                                outer: points,
                                 inner: vec![],
                             };
                         } else {
@@ -119,7 +119,9 @@ impl Geometry {
                     polygons.push(current_polygon);
                 }
 
-                Some(Geometry::Polygon { polygons })
+                Some(Geometry::Polygon(MultiPolygonGeometry {
+                    polygons
+                }))
             }
             GeomType::Unknown => {
                 panic!("unknwon")
@@ -134,7 +136,7 @@ impl Geometry {
             Geometry::Line(path) => {
                 Some(GeometryData::Path(path))
             }
-            Geometry::Polygon { .. } => None,
+            Geometry::Polygon(polygon) => Some(GeometryData::Fill(polygon)),
         }
     }
 }
@@ -247,14 +249,14 @@ impl Value {
         panic!("tf");
     }
     
-    fn build(self) -> atlas::feature::Value {
+    fn build(self) -> atlas::data::Value {
         match self {
-            Value::String(v) => atlas::feature::Value::String(v),
-            Value::F32(v) => atlas::feature::Value::F32(v),
-            Value::F64(v) => atlas::feature::Value::F64(v),
-            Value::I64(v) => atlas::feature::Value::I64(v),
-            Value::U64(v) => atlas::feature::Value::U64(v),
-            Value::Bool(v) => atlas::feature::Value::Bool(v),
+            Value::String(v) => atlas::data::Value::String(v),
+            Value::F32(v) => atlas::data::Value::F32(v),
+            Value::F64(v) => atlas::data::Value::F64(v),
+            Value::I64(v) => atlas::data::Value::I64(v),
+            Value::U64(v) => atlas::data::Value::U64(v),
+            Value::Bool(v) => atlas::data::Value::Bool(v),
         }
     }
     
@@ -287,11 +289,9 @@ impl Feature {
 
     fn build(self) -> Option<FeatureData> {
         Some(FeatureData {
-            fields: FeatureFields {
-                fields: self.fields.into_iter().map(|(v, k)| {
-                    (v, k.build())
-                }).collect()
-            },
+            fields: self.fields.into_iter().map(|(v, k)| {
+                (v, k.build())
+            }).collect(),
             geometry: self.geo.build()?
         })
     }

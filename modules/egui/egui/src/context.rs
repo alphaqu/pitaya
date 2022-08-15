@@ -694,7 +694,7 @@ impl Context {
     }
 
     /// Useful for pixel-perfect rendering
-    pub(crate) fn round_pos_to_pixels(&self, pos: Pos2) -> Pos2 {
+    pub fn round_pos_to_pixels(&self, pos: Pos2) -> Pos2 {
         pos2(self.round_to_pixel(pos.x), self.round_to_pixel(pos.y))
     }
 

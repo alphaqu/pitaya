@@ -1,8 +1,8 @@
 //! Everything related to text, fonts, text layout, cursors etc.
 
 pub mod cursor;
-mod font;
-mod fonts;
+pub mod font;
+pub mod fonts;
 mod text_layout;
 mod text_layout_types;
 

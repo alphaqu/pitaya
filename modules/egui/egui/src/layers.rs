@@ -109,7 +109,7 @@ pub struct ShapeIdx(usize);
 
 /// A list of [`Shape`]s paired with a clip rectangle.
 #[derive(Clone, Default)]
-pub struct PaintList(Vec<ClippedShape>);
+pub struct PaintList(pub Vec<ClippedShape>);
 
 impl PaintList {
     #[inline(always)]

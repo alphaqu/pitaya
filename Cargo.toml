@@ -6,6 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tokio = { version = "1.20.1" , features = ["full"]}
+
+
 # GUI
 egui = {  path = "modules/egui/egui" }
 #eframe = "0.18.0"
@@ -20,8 +23,8 @@ ptya-common = { path = "modules/ptya-common" }
 #ptya-glfw-glium = { path = "modules/ptya-glfw-glium" }
 ptya-frontend = { path = "modules/ptya-frontend" }
 
-ptya-map = { path = "modules/ptya-map" }
-ptya-map-v2 = { path = "modules/ptya-map-v2" }
+#ptya-map = { path = "modules/ptya-map" }
+# ptya-map-v2 = { path = "modules/ptya-map-v2" }
 
 log = "0.4.17"
 
@@ -34,14 +37,13 @@ members = [
     "modules/egui/emath",
     "modules/egui/epaint",
     "modules/egui/egui-winit",
-    "modules/ptya-map",
+    #"modules/ptya-map",
     "modules/ptya-map-v2",
     "modules/ptya-common",
-    "modules/ptya-spotify",
+   # "modules/ptya-spotify",
     "modules/ptya-frontend",
     "modules/egui_glium",
     "modules/delaunator",
-    "modules/ptya-glfw-glium",
 ]
 
 [profile.dev]

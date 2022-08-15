@@ -42,14 +42,14 @@ impl MapStorage {
 
         let mut cached = HashSet::new();
         for dir in fs::read_dir(&dir)?.flatten() {
-            println!("{:?}", dir.path());
+          //  println!("{:?}", dir.path());
             if let Some(value) = dir
                 .path()
                 .file_name()
                 .and_then(|v| v.to_str())
                 .and_then(|v| TilePosition::parse(v.strip_suffix(".mvt")?))
             {
-                println!("Found cached tile {value:?}");
+                //println!("Found cached tile {value:?}");
                 cached.insert(value);
             }
         }

@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use crate::pos::TilePosition;
 use anyways::ext::AuditExt;
 use anyways::Result;
-use atlas::tile::TileData;
+use atlas::data::TileData;
 use fxhash::FxHashSet;
 use reqwest::Method;
 use std::fs::write;
@@ -33,14 +33,14 @@ impl MapQuery {
 
 		let mut cached = FxHashSet::default();
 		for dir in std::fs::read_dir(&path)?.flatten() {
-			println!("{:?}", dir.path());
+			//println!("{:?}", dir.path());
 			if let Some(value) = dir
 				.path()
 				.file_name()
 				.and_then(|v| v.to_str())
 				.and_then(|v| TilePosition::parse_file_name(v.strip_suffix(".mvt")?))
 			{
-				println!("Found cached tile {value:?}");
+				//println!("Found cached tile {value:?}");
 				cached.insert(value);
 			}
 		}
@@ -54,10 +54,10 @@ impl MapQuery {
 
 	pub async fn get(&self, pos: TilePosition) -> Result<TileData> {
 		if self.cache_tiles.read().await.contains(&pos)  {
-			self.get_cached(pos).await
+			self.get_cached(pos).await.wrap_err_with(|| format!("Failed to get cached tile {:?}", pos))
 		} else {
 			self.cache_tiles.write().await.insert(pos);
-			self.get_mapbox(pos).await
+			self.get_mapbox(pos).await.wrap_err_with(|| format!("Failed to get mapbox tile {:?}", pos))
 		}
 	}
 
@@ -65,7 +65,7 @@ impl MapQuery {
 		let path = pos.get_file_name();
 		let path = self.cache_path.join(path);
 		let data = tokio::fs::read(path).await.wrap_err("Failed to read file")?;
-		Self::read_mvt(&data).await
+		Self::read_mvt(&data).await.wrap_err("Failed to read MVT")
 	}
 
 	async fn get_mapbox(&self, pos: TilePosition) -> Result<TileData> {
@@ -92,7 +92,7 @@ impl MapQuery {
             .await
             .wrap_err("Failed to save response as cache.")?;
 
-        Self::read_mvt(bytes.as_ref()).await
+        Self::read_mvt(bytes.as_ref()).await.wrap_err("Failed to read MVT")
     }
 
 	async fn read_mvt(data: &[u8]) -> Result<TileData> {

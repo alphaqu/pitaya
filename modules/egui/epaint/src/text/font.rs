@@ -215,7 +215,7 @@ type FontIndex = usize;
 // TODO(emilk): rename?
 /// Wrapper over multiple [`FontImpl`] (e.g. a primary + fallbacks for emojis)
 pub struct Font {
-    fonts: Vec<Arc<FontImpl>>,
+    pub fonts: Vec<Arc<FontImpl>>,
     /// Lazily calculated.
     characters: Option<BTreeSet<char>>,
     replacement_glyph: (FontIndex, GlyphInfo),

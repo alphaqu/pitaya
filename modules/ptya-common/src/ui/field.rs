@@ -1,16 +1,18 @@
-use crate::Settings;
+use crate::{Settings, System};
 use egui::{FontFamily, FontId, FontSelection, Rect, Response, Rounding, Style, TextBuffer, TextEdit, TextStyle, Ui, Vec2, Widget, WidgetText};
+use crate::color::color::{ColorState, ColorType};
+use crate::settings::SPACING_SIZE;
 
 pub struct Field<'a, 's> {
     text: TextEdit<'a>,
-    settings: &'s Settings,
+    system: &'s System,
 }
 
 impl<'a, 's> Field<'a, 's> {
-    pub fn new(text: &'a mut dyn TextBuffer, settings: &'s Settings) -> Field<'a, 's> {
+    pub fn new(text: &'a mut dyn TextBuffer, settings: &'s System) -> Field<'a, 's> {
         Field {
 	        text: TextEdit::singleline(text),
-	        settings,
+	        system: settings,
         }
     }
 
@@ -31,12 +33,14 @@ impl<'a, 's> Field<'a, 's> {
 
 impl<'a, 's> Widget for Field<'a, 's> {
     fn ui(self, ui: &mut Ui) -> Response {
+	    // TODO custom field
+	    let fg = self.system.color.fg(ColorType::Primary, ColorState::Idle);
+
 	    // why they use extreme? it looks like shit
-	    ui.style_mut().visuals.extreme_bg_color = self.settings.style.bg_2;
 	    let response = self.text
-		    .margin(Vec2::splat(self.settings.layout.spacing_size) - Vec2::new(5.0, 5.0)).desired_width(400.0)
+		    .margin(Vec2::splat(SPACING_SIZE) - Vec2::new(5.0, 5.0)).desired_width(400.0)
 		    .font(FontSelection::Style(TextStyle::Body))
-		    .text_color(self.settings.style.fg_4)
+		    .text_color(fg)
 		    .ui(ui);
 
 	    response

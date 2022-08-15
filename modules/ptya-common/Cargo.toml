@@ -6,13 +6,29 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fxhash = "0.2.1"
-image = { version = "0.24.3", default-features = false, features = ["png"] }
-egui = {  path  = "../egui/egui" }
-glium = "0.31"
+# Errors
+anyways = { version = "0.3.0", features = ["send", "sync"] }
 
+# Async
 tokio = { version = "1.20.1" , features = ["full"]}
 
+# Logging
 log = "0.4.17"
 simplelog = { version = "^0.11.0", features = ["paris"] }
-rayon = "1.5.3"
+
+# Util
+fxhash = "0.2.1"
+mathie = "0.5.0"
+serde = { version = "1.0.143", features = ["derive"] }
+serde_json = "1.0.83"
+
+# Frontend
+egui = {  path  = "../egui/egui" }
+epaint = {  path  = "../egui/epaint" }
+glium = "0.31"
+
+ttf-parser = "0.15.2"
+ab_glyph = "0.2.15"
+
+image = { version = "0.24.3", default-features = false, features = ["png"] }
+palette = "0.6.1"
