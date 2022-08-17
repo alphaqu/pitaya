@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.20.1" , features = ["full"]}
+tokio = { version = "1.20" , features = ["full"]}
 
 
 # GUI
@@ -14,9 +14,9 @@ egui = {  path = "modules/egui/egui" }
 #eframe = "0.18.0"
 egui_glium = { path = "modules/egui_glium" }
 glium = "0.31"
-glutin = "0.28.0"
+glutin = "0.28"
 # glfw = "0.45.0"
-image = { version = "0.24.3", default-features = false, features = ["png"] }
+image = { version = "0.24", default-features = false, features = ["png"] }
 
 # Modules
 ptya-common = { path = "modules/ptya-common" }
@@ -26,7 +26,7 @@ ptya-frontend = { path = "modules/ptya-frontend" }
 #ptya-map = { path = "modules/ptya-map" }
 # ptya-map-v2 = { path = "modules/ptya-map-v2" }
 
-log = "0.4.17"
+log = "0.4"
 
 [target.aarch64-unknown-linux-gnu]
 

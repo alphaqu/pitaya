@@ -96,7 +96,7 @@ impl<V: Lerp> LerpSpectrum<V> {
 
 	pub fn get(&self, t: f32) -> V {
 		self.spectrum.revolve_get(t,  |from, to, t| {
-			V::lerp(from, to, self.interpolation.get(t))
+			V::lerp_static(from, to, self.interpolation.get(t))
 		})
 	}
 }

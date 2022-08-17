@@ -1,6 +1,6 @@
-use crate::System;
+use crate::{ColorState, ColorType, System};
 use egui::{Area, Id, LayerId, Layout, Order, Pos2, Sense, Ui, Vec2};
-use epaint::{ClippedShape, PaintCallback, Rect, Rounding};
+use epaint::{ClippedShape, PaintCallback, Rect, Rounding, Stroke};
 use fxhash::FxHashMap;
 use glium::backend::Context;
 use glium::framebuffer::{RenderBuffer, SimpleFrameBuffer};
@@ -9,7 +9,8 @@ use glium::Surface;
 use log::info;
 use std::rc::Rc;
 use std::sync::RwLock;
-use crate::settings::ROUNDING_SIZE;
+use egui::style::Margin;
+use crate::settings::{ROUNDING_SIZE, SPACING_SIZE};
 use crate::ui::animation::state::State;
 
 pub struct AppComp {
@@ -60,7 +61,7 @@ impl AppContainer {
         }
     }
 
-    pub fn tick(&mut self, ui: &mut Ui, ctx: &Rc<Context>, rect: egui::Rect, system: &System) {
+    pub fn tick(&mut self, ui: &mut Ui, rect: egui::Rect, system: &mut System) {
         let ppp = ui.ctx().pixels_per_point();
 
         let width = (rect.width() * ppp) as u32;
@@ -69,7 +70,7 @@ impl AppContainer {
         let mut redraw = true;
         if self.buffer.width() != width || self.buffer.height() != height {
             self.buffer = Rc::new(
-                SrgbTexture2d::empty(ctx, width, height).unwrap(),
+                SrgbTexture2d::empty(&system.gl_ctx, width, height).unwrap(),
             );
             redraw = true;
         }
@@ -78,11 +79,12 @@ impl AppContainer {
 
         if redraw {
             let shape = {
-                let mut fb = SimpleFrameBuffer::new(ctx, &*self.buffer).unwrap();
+                let mut fb = SimpleFrameBuffer::new(&system.gl_ctx, &*self.buffer).unwrap();
                 fb.clear_color(0.0, 0.0, 0.0, 0.0);
+                ui.painter().rect(rect, ROUNDING_SIZE, system.color.bg(1.0, ColorType::Primary, ColorState::Idle), Stroke::none());
 
                 let id = ui.id().with("app_window");
-                let area = Area::new(id).movable(false).fixed_pos(rect.min).drag_bounds(rect);
+                let area = Area::new(id).movable(false).fixed_pos(rect.min + Vec2::splat(SPACING_SIZE)).drag_bounds(rect.shrink(SPACING_SIZE));
                 let layer_id = area.layer();
                 //let state = ui.ctx().memory().areas.get(id).cloned();
                 //if state.is_none() {
@@ -93,9 +95,9 @@ impl AppContainer {
                 //    size: rect.size(),
                 //    interactable: true,
                 //});
-
-               area.show(ui.ctx(), |ui| {
-                   self.app.tick(ui, &mut fb, system);
+                area.show(ui.ctx(), |ui| {
+                    ui.set_clip_rect(ui.clip_rect().expand(SPACING_SIZE));
+                    self.app.tick(ui, &mut fb, system);
                });
 
               // let mut app_ui = Ui::new(ui.ctx().clone(), LayerId::new(Order::Middle, id), id, rect, rect);
@@ -123,10 +125,10 @@ impl AppContainer {
 
 pub trait AppImpl: Send {
     /// Runs after initialization and every time a setting (like a theme) changes.
-    fn update(&mut self, system: &System);
+    fn update(&mut self, system: &mut System);
 
     /// Runs every frame.
-    fn tick(&mut self, ui: &mut Ui, fb: &mut SimpleFrameBuffer, system: &System);
+    fn tick(&mut self, ui: &mut Ui, fb: &mut SimpleFrameBuffer, system: &mut System);
 }
 
 pub struct Manifest {

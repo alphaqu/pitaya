@@ -6,11 +6,15 @@ use crate::asset::Location;
 use anyways::ext::AuditExt;
 
 pub const ANIMATION_TIME: f32 = 0.25;
+
+pub const SWIPE_SIZE: f32 = 200.0;
 pub const MAX_WIDGETS: usize = 3;
 
-pub const SPACING_SIZE: f32 = 20.0;
+pub const SPACING_SIZE: f32 = 25.0;
+pub const BUTTON_SIDE_SPACING_SIZE: f32 = 50.0;
 pub const ROUNDING_SIZE: f32 = 24.0;
-pub const INTERACTIVE_SIZE: f32 = 110.0;
+pub const VISUAL_SIZE: f32 = 40.0;
+pub const INTERACTIVE_SIZE: f32 = 90.0;
 
 pub const WIDGET_WIDTH: f32 = 440.0;
 pub const WIDGET_ADD_SIZE: f32 = 150.0;

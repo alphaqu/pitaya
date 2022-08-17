@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 ptya-common = { path = "../ptya-common" }
-log = "0.4.17"
+log = "0.4"
 
 glium = "0.31"
 egui_glium = { path = "../egui_glium" }

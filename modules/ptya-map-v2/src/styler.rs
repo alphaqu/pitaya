@@ -217,6 +217,6 @@ fn exp(zoom: f32, base: f32, z: Range<f32>, v: Range<f32>) -> f32 {
         v.end
     } else {
         let t = (zoom - z.start) / (z.end - z.start);
-        f32::lerp(&v.start, &v.end, t.powf(base))
+        f32::lerp_static(&v.start, &v.end, t.powf(base))
     }
 }

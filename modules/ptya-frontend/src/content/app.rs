@@ -53,10 +53,11 @@ impl AppPanel {
         let rect = self.rect.get(ui);
         self.draw_indicator(ui, rect, system, dragging_app);
         ui.allocate_ui_at_rect(rect, |ui| {
-            let mut guard = system.app.write().unwrap();
+            let arc = system.app.clone();
+            let mut guard = arc.write().unwrap();
             let app = guard.get_mut_app(&self.app_id);
             ui.set_clip_rect(rect);
-            app.tick(ui, &system.gl_ctx, rect, system);
+            app.tick(ui, rect, system);
             
             //  match &mut app.app {
             //                 AppInstance::EGui(egui) => {

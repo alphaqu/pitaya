@@ -76,7 +76,7 @@ impl State {
 
     pub fn lerp<V: Lerp>(&mut self, ctx: &impl ContextHolder, from: &V, to: &V) -> V {
         let progress = self.get_progress(ctx);
-        V::lerp(from, to, progress)
+        V::lerp_static(from, to, progress)
     }
 
     pub fn is_nan(&self) -> bool {

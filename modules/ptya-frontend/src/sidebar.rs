@@ -36,7 +36,7 @@ impl SidebarPanel {
                 fill: system.color.bg(1.0, ColorType::Primary, ColorState::Idle),
                 stroke: Default::default(),
             })
-            .max_width(100.0)
+            .max_width(SPACING_SIZE + INTERACTIVE_SIZE + SPACING_SIZE)
             .resizable(false)
             .show(ctx, |ui| {
                 let entry_size = Vec2::new(
@@ -48,10 +48,6 @@ impl SidebarPanel {
                     entry.update(ui, content, system, entry_size);
                     // Padding
                     //ui.allocate_space(Vec2::new(width, 25.0));
-                }
-
-                if ui.button("hello").clicked() {
-
                 }
             });
     }

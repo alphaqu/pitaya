@@ -7,28 +7,32 @@ edition = "2021"
 
 [dependencies]
 # Errors
-anyways = { version = "0.3.0", features = ["send", "sync"] }
+anyways = { version = "0.3", features = ["send", "sync"] }
 
 # Async
-tokio = { version = "1.20.1" , features = ["full"]}
+tokio = { version = "1.20" , features = ["full"]}
 
 # Logging
-log = "0.4.17"
-simplelog = { version = "^0.11.0", features = ["paris"] }
+log = "0.4"
+simplelog = { version = "0.11", features = ["paris"] }
+lyon = "1.0"
+
+# Color
+material-color-utilities-rs = "0.1.0"
 
 # Util
-fxhash = "0.2.1"
-mathie = "0.5.0"
-serde = { version = "1.0.143", features = ["derive"] }
-serde_json = "1.0.83"
+fxhash = "0.2"
+mathie = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 # Frontend
 egui = {  path  = "../egui/egui" }
 epaint = {  path  = "../egui/epaint" }
 glium = "0.31"
 
-ttf-parser = "0.15.2"
-ab_glyph = "0.2.15"
+ttf-parser = "0.15"
+ab_glyph = "0.2"
 
-image = { version = "0.24.3", default-features = false, features = ["png"] }
-palette = "0.6.1"
+image = { version = "0.24", default-features = false, features = ["png"] }
+palette = "0.6"

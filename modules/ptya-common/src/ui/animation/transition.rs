@@ -38,7 +38,7 @@ impl<V: Lerp> Transition<V> {
         } else if self.state.is_done() {
             self.to.clone()
         } else {
-            V::lerp(
+            V::lerp_static(
                 &self.from,
                 &self.to,
                 self.state.get_progress(ctx),

@@ -4,12 +4,12 @@ use crate::color::ColorComp;
 use crate::font::load_fonts;
 use crate::icon::IconComp;
 use crate::notification::NotificationComp;
-use crate::settings::{Settings, INTERACTIVE_SIZE};
-use crate::ui::spinner::Spinner;
+use crate::settings::{Settings, INTERACTIVE_SIZE, SPACING_SIZE};
+use ui::widgets::progress_spinner::Spinner;
 use crate::util::task::Task;
 use anyways::{ext::AuditExt, Result};
 use egui::panel::TopBottomSide;
-use egui::{CentralPanel, Frame, Label, ProgressBar, Style, TextStyle, TopBottomPanel, Ui, Vec2, Widget};
+use egui::{CentralPanel, Frame, Label, ProgressBar, Style, TextStyle, TopBottomPanel, Ui, Vec2, Visuals, Widget};
 use epaint::text::FontDefinitions;
 use log::LevelFilter;
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
@@ -24,6 +24,7 @@ use egui::style::Spacing;
 use epaint::FontFamily::Proportional;
 use epaint::FontId;
 use crate::color::color::{ColorState, ColorType};
+use crate::ui::animation::AnimationComp;
 use crate::ui::WidgetApp;
 
 pub mod app;
@@ -43,10 +44,11 @@ pub struct System {
 
     pub runtime: Arc<Runtime>,
 
+    pub animation: AnimationComp,
     pub asset: AssetComp,
     pub notification: NotificationComp,
     pub settings: Settings,
-    pub app: RwLock<AppComp>,
+    pub app: Arc< RwLock<AppComp>>,
     pub color: ColorComp,
     pub icon: IconComp,
 
@@ -92,6 +94,10 @@ impl System {
                 interact_size: Vec2::new(INTERACTIVE_SIZE, INTERACTIVE_SIZE),
                 ..Spacing::default()
             },
+            visuals: Visuals {
+                clip_rect_margin: SPACING_SIZE,
+                ..Visuals::default()
+            },
             ..Style::default()
         });
 
@@ -135,10 +141,11 @@ impl System {
             gl_ctx,
             ctx,
             runtime,
+            animation: AnimationComp::new(),
             asset,
             notification,
             settings: Default::default(),
-            app: RwLock::new(AppComp::init()),
+            app: Arc::new(RwLock::new(AppComp::init())),
             color: ColorComp::init(),
             icon: IconComp::init(),
             core: SystemCore::Loading { splash_text, task },
@@ -178,7 +185,7 @@ impl System {
         if let Some(value) = out {
             let mut app = AppComp::init();
             app.load_app(AppContainer::new(&self.gl_ctx, WidgetApp::app_info(), Box::new(WidgetApp::new())));
-            self.app = RwLock::new(app);
+            self.app = Arc::new(RwLock::new(app));
             self.color = value.color;
             self.icon = value.icon;
             self.settings = value.settings;

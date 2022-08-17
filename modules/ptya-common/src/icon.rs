@@ -3,6 +3,8 @@ use log::{info, warn};
 use crate::asset::Location;
 use crate::AssetComp;
 use anyways::Result;
+use egui::{Align2, Painter, Pos2, Vec2};
+use epaint::{Color32, FontFamily, FontId, Stroke};
 
 pub struct IconComp {
     lookup: FxHashMap<String, char>,
@@ -56,6 +58,14 @@ impl IconComp {
 
         info!("Created cache of {} icons", lookup.len());
         Ok(IconComp { lookup })
+    }
+
+    pub fn draw(&self, painter: &Painter, name: &str, pos: Pos2, size: f32, color: Color32) {
+        let char = self.get(name);
+        painter.text(pos + Vec2::new(0.0, size / 5.0), Align2::CENTER_CENTER, char, FontId::new(
+            size * 1.50,
+            FontFamily::Name("Icons".into()),
+        ), color);
     }
 
     pub fn get(&self, name: &str) -> char {

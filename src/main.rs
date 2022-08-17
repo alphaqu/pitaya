@@ -141,6 +141,7 @@ impl Pitaya {
                 self.frontend = Some(Frontend::new(&mut self.system));
             }
         } else if let Some(frontend) = &mut self.frontend {
+            self.system.animation.tick(ctx);
             frontend.tick(&mut self.system);
         }
         //self.sidebar

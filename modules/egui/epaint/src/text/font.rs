@@ -255,6 +255,7 @@ impl Font {
         let replacement_glyph = slf
             .glyph_info_no_cache_or_fallback(PRIMARY_REPLACEMENT_CHAR)
             .or_else(|| slf.glyph_info_no_cache_or_fallback(FALLBACK_REPLACEMENT_CHAR))
+            .or_else(|| slf.glyph_info_no_cache_or_fallback(char::from_u32(0xe835).unwrap()))
             .unwrap_or_else(|| {
                 panic!(
                     "Failed to find replacement characters {:?} or {:?}",

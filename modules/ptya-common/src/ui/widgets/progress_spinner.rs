@@ -1,13 +1,8 @@
-use std::f64::consts::PI;
-use crate::settings::ANIMATION_TIME;
-use crate::ui::animation::lerp::Lerp;
-use crate::ui::animation::state::State;
-use crate::ui::animation::transition::Transition;
-use crate::System;
-use egui::{lerp, vec2, Painter, Pos2, Rect, Response, Sense, Ui, Widget};
+use egui::{lerp, Painter, Pos2, Rect, Response, Sense, Ui, vec2, Widget};
 use epaint::{Color32, Shape, Stroke};
-use std::time::Instant;
-use crate::color::color::{ColorState, ColorType};
+use std::f64::consts::PI;
+use crate::{ColorState, ColorType, System};
+use crate::ui::animation::state::State;
 
 const POINTS: i32 = 25;
 const TRANSITION_POINTS: i32 = 100;

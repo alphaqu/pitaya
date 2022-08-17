@@ -56,18 +56,21 @@ impl ColorComp {
 
         let fallback = Theme::fallback();
         let theme = themes.iter().find(|v| v.id == settings.current_theme).unwrap_or(&fallback);
+
+        const PITAYA_RED: [u8; 4] = [0xff, 0xe5, 0x4c, 0x64];
+
         Ok(ColorComp {
-            color: ColorSettings::new(theme)?,
+            color: ColorSettings::material(PITAYA_RED, true),
             themes,
         })
     }
 
     pub fn inactive_bg(&self) -> Color32 {
-        Color32::lerp(&Color32::TRANSPARENT, &self.color.neutral.c_fg, 0.12)
+        Color32::lerp_static(&Color32::TRANSPARENT, &self.color.neutral.on_color_container, 0.12)
     }
 
     pub fn inactive_fg(&self) -> Color32 {
-        Color32::lerp(&Color32::TRANSPARENT, &self.color.neutral.c_fg, 0.38)
+        Color32::lerp_static(&Color32::TRANSPARENT, &self.color.neutral.on_color_container, 0.38)
     }
 
     pub fn shadow(&self) -> Shadow {
@@ -77,11 +80,19 @@ impl ColorComp {
         }
     }
 
+    pub fn compose_bg(&self, value: f32, accent: Color32, state: ColorState) -> Color32  {
+        self.compose(value, self.color.neutral.color, accent, state)
+    }
+    pub fn compose(&self, value: f32, bg: Color32, accent: Color32, state: ColorState) -> Color32 {
+        Color32::lerp_static(&bg, &accent, (value * 0.08) + state.get_opacity_boost())
+    }
+
+
     pub fn bg(&self, value: f32, ty: ColorType, state: ColorState) -> Color32 {
         if state.is_active() {
             let style = self.color.get_style(ty);
-            let bg = self.color.neutral.bg;
-            Color32::lerp(&bg, &style.bg, (value * 0.045) + state.get_opacity_boost())
+            let bg = self.color.neutral.color;
+            self.compose(value, bg, style.color, state)
         } else {
             self.inactive_bg()
         }
@@ -90,12 +101,8 @@ impl ColorComp {
     pub fn c_bg(&self, value: f32, ty: ColorType, state: ColorState) -> Color32 {
         if state.is_active() {
             let style = self.color.get_style(ty);
-            let bg = style.c_bg;
-            Color32::lerp(
-                &bg,
-                &style.c_fg,
-                (value * 0.045) + state.get_opacity_boost(),
-            )
+            let bg = style.color_container;
+            self.compose(value, bg, style.on_color_container, state)
         } else {
             self.inactive_bg()
         }
@@ -103,7 +110,7 @@ impl ColorComp {
 
     pub fn fg(&self, ty: ColorType, state: ColorState) -> Color32 {
         if state.is_active() {
-            self.color.get_style(ty).fg
+            self.color.get_style(ty).on_color
         } else {
             self.inactive_fg()
         }
@@ -111,7 +118,7 @@ impl ColorComp {
 
     pub fn c_fg(&self, ty: ColorType, state: ColorState) -> Color32 {
         if state.is_active() {
-            self.color.get_style(ty).c_fg
+            self.color.get_style(ty).on_color_container
         } else {
             self.inactive_fg()
         }
