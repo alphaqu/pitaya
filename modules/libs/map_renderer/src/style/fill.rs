@@ -1,24 +1,26 @@
-use mathie::Vec2D;
 use crate::geometry::fill::PolygonGeometry;
-use crate::style::{Style};
-use crate::types::{MapVertex};
+use crate::style::Style;
+use crate::types::MapVertex;
+use mathie::Vec2D;
 
 #[derive(Copy, Clone)]
 pub struct FillStyleInput<'a> {
 	pub outer: &'a [Vec2D<f32>],
-	pub inner: &'a [Vec<Vec2D<f32>>]
+	pub inner: &'a [Vec<Vec2D<f32>>],
 }
-
 
 impl<'a> From<&'a PolygonGeometry> for FillStyleInput<'a> {
 	fn from(geometry: &'a PolygonGeometry) -> Self {
-		FillStyleInput { outer: &geometry.outer,  inner: &geometry.inner }
+		FillStyleInput {
+			outer: &geometry.outer,
+			inner: &geometry.inner,
+		}
 	}
 }
 
 #[derive(Copy, Clone)]
 pub struct FillStyle {
-	pub color: [f32; 4]
+	pub color: [f32; 4],
 }
 
 impl FillStyle {
@@ -56,7 +58,7 @@ impl Style for FillStyle {
 			data.push(vec.y() * 4096.0);
 			v.push(MapVertex {
 				a_pos: [vec.x(), vec.y()],
-				a_color: self.color
+				a_color: self.color,
 			})
 		}
 
@@ -67,7 +69,7 @@ impl Style for FillStyle {
 				data.push(vec.y() * 4096.0);
 				v.push(MapVertex {
 					a_pos: [vec.x(), vec.y()],
-					a_color: self.color
+					a_color: self.color,
 				})
 			}
 		}
@@ -87,7 +89,5 @@ impl Style for FillStyle {
 		}
 	}
 
-	fn prepare(&mut self, scale: f32) {
-
-	}
+	fn prepare(&mut self, scale: f32) {}
 }

@@ -1,7 +1,7 @@
 use mathie::Vec2D;
 
 pub struct MultiPolygonGeometry {
-	pub polygons: Vec<PolygonGeometry>
+	pub polygons: Vec<PolygonGeometry>,
 }
 
 pub struct PolygonGeometry {

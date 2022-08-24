@@ -30,22 +30,22 @@ pub mod textures;
 pub mod util;
 
 pub use {
-    bezier::{CubicBezierShape, QuadraticBezierShape},
-    color::{Color32, Rgba},
-    image::{ColorImage, FontImage, ImageData, ImageDelta},
-    mesh::{Mesh, Mesh16, Vertex},
-    shadow::Shadow,
-    shape::{
-        CircleShape, PaintCallback, PaintCallbackInfo, PathShape, RectShape, Rounding, Shape,
-        TextShape,
-    },
-    stats::PaintStats,
-    stroke::Stroke,
-    tessellator::{tessellate_shapes, TessellationOptions, Tessellator},
-    text::{FontFamily, FontId, Fonts, Galley},
-    texture_atlas::TextureAtlas,
-    texture_handle::TextureHandle,
-    textures::TextureManager,
+	bezier::{CubicBezierShape, QuadraticBezierShape},
+	color::{Color32, Rgba},
+	image::{ColorImage, FontImage, ImageData, ImageDelta},
+	mesh::{Mesh, Mesh16, Vertex},
+	shadow::Shadow,
+	shape::{
+		CircleShape, PaintCallback, PaintCallbackInfo, PathShape, RectShape, Rounding, Shape,
+		TextShape,
+	},
+	stats::PaintStats,
+	stroke::Stroke,
+	tessellator::{tessellate_shapes, TessellationOptions, Tessellator},
+	text::{FontFamily, FontId, Fonts, Galley},
+	texture_atlas::TextureAtlas,
+	texture_handle::TextureHandle,
+	textures::TextureManager,
 };
 
 pub use emath::{pos2, vec2, Pos2, Rect, Vec2};
@@ -68,21 +68,21 @@ pub const WHITE_UV: emath::Pos2 = emath::pos2(0.0, 0.0);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum TextureId {
-    /// Textures allocated using [`TextureManager`].
-    ///
-    /// The first texture (`TextureId::Epaint(0)`) is used for the font data.
-    Managed(u64),
+	/// Textures allocated using [`TextureManager`].
+	///
+	/// The first texture (`TextureId::Epaint(0)`) is used for the font data.
+	Managed(u64),
 
-    /// Your own texture, defined in any which way you want.
-    /// The backend renderer will presumably use this to look up what texture to use.
-    User(u64),
+	/// Your own texture, defined in any which way you want.
+	/// The backend renderer will presumably use this to look up what texture to use.
+	User(u64),
 }
 
 impl Default for TextureId {
-    /// The epaint font texture.
-    fn default() -> Self {
-        Self::Managed(0)
-    }
+	/// The epaint font texture.
+	fn default() -> Self {
+		Self::Managed(0)
+	}
 }
 
 /// A [`Shape`] within a clip rectangle.
@@ -90,11 +90,11 @@ impl Default for TextureId {
 /// Everything is using logical points.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClippedShape(
-    /// Clip / scissor rectangle.
-    /// Only show the part of the [`Shape`] that falls within this.
-    pub emath::Rect,
-    /// The shape
-    pub Shape,
+	/// Clip / scissor rectangle.
+	/// Only show the part of the [`Shape`] that falls within this.
+	pub emath::Rect,
+	/// The shape
+	pub Shape,
 );
 
 /// A [`Mesh`] or [`PaintCallback`] within a clip rectangle.
@@ -102,18 +102,18 @@ pub struct ClippedShape(
 /// Everything is using logical points.
 #[derive(Clone, Debug)]
 pub struct ClippedPrimitive {
-    /// Clip / scissor rectangle.
-    /// Only show the part of the [`Mesh`] that falls within this.
-    pub clip_rect: emath::Rect,
-    /// What to paint - either a [`Mesh`] or a [`PaintCallback`].
-    pub primitive: Primitive,
+	/// Clip / scissor rectangle.
+	/// Only show the part of the [`Mesh`] that falls within this.
+	pub clip_rect: emath::Rect,
+	/// What to paint - either a [`Mesh`] or a [`PaintCallback`].
+	pub primitive: Primitive,
 }
 
 /// A rendering primitive - either a [`Mesh`] or a [`PaintCallback`].
 #[derive(Clone, Debug)]
 pub enum Primitive {
-    Mesh(Mesh),
-    Callback(PaintCallback),
+	Mesh(Mesh),
+	Callback(PaintCallback),
 }
 
 // ----------------------------------------------------------------------------
@@ -136,24 +136,24 @@ macro_rules! epaint_assert {
 
 #[inline(always)]
 pub(crate) fn f32_hash<H: std::hash::Hasher>(state: &mut H, f: f32) {
-    if f == 0.0 {
-        state.write_u8(0);
-    } else if f.is_nan() {
-        state.write_u8(1);
-    } else {
-        use std::hash::Hash;
-        f.to_bits().hash(state);
-    }
+	if f == 0.0 {
+		state.write_u8(0);
+	} else if f.is_nan() {
+		state.write_u8(1);
+	} else {
+		use std::hash::Hash;
+		f.to_bits().hash(state);
+	}
 }
 
 #[inline(always)]
 pub(crate) fn f64_hash<H: std::hash::Hasher>(state: &mut H, f: f64) {
-    if f == 0.0 {
-        state.write_u8(0);
-    } else if f.is_nan() {
-        state.write_u8(1);
-    } else {
-        use std::hash::Hash;
-        f.to_bits().hash(state);
-    }
+	if f == 0.0 {
+		state.write_u8(0);
+	} else if f.is_nan() {
+		state.write_u8(1);
+	} else {
+		use std::hash::Hash;
+		f.to_bits().hash(state);
+	}
 }

@@ -1,4 +1,4 @@
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 name: CI
 
@@ -32,7 +32,7 @@ jobs:
     name: cargo check --all-features
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-latest, macOS-latest]
+        os: [ ubuntu-20.04, windows-latest, macOS-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2

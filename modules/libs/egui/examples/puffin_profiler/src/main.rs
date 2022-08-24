@@ -3,22 +3,22 @@
 use eframe::egui;
 
 fn main() {
-    start_puffin_server(); // NOTE: you may only want to call this if the users specifies some flag or clicks a button!
+	start_puffin_server(); // NOTE: you may only want to call this if the users specifies some flag or clicks a button!
 
-    let options = eframe::NativeOptions::default();
-    eframe::run_native(
-        "My egui App",
-        options,
-        Box::new(|_cc| Box::new(MyApp::default())),
-    );
+	let options = eframe::NativeOptions::default();
+	eframe::run_native(
+		"My egui App",
+		options,
+		Box::new(|_cc| Box::new(MyApp::default())),
+	);
 }
 
 #[derive(Default)]
 struct MyApp {}
 
 impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
+	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+		egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Example of how to use the puffin profiler with egui");
             ui.separator();
 
@@ -46,23 +46,23 @@ impl eframe::App for MyApp {
                 std::thread::sleep(std::time::Duration::from_millis(50));
             }
         });
-    }
+	}
 }
 
 fn start_puffin_server() {
-    puffin::set_scopes_on(true); // tell puffin to collect data
+	puffin::set_scopes_on(true); // tell puffin to collect data
 
-    match puffin_http::Server::new("0.0.0.0:8585") {
-        Ok(puffin_server) => {
-            eprintln!("Run:  cargo install puffin_viewer && puffin_viewer --url 127.0.0.1:8585");
+	match puffin_http::Server::new("0.0.0.0:8585") {
+		Ok(puffin_server) => {
+			eprintln!("Run:  cargo install puffin_viewer && puffin_viewer --url 127.0.0.1:8585");
 
-            // We can store the server if we want, but in this case we just want
-            // it to keep running. Dropping it closes the server, so let's not drop it!
-            #[allow(clippy::mem_forget)]
-            std::mem::forget(puffin_server);
-        }
-        Err(err) => {
-            eprintln!("Failed to start puffin server: {}", err);
-        }
-    };
+			// We can store the server if we want, but in this case we just want
+			// it to keep running. Dropping it closes the server, so let's not drop it!
+			#[allow(clippy::mem_forget)]
+			std::mem::forget(puffin_server);
+		}
+		Err(err) => {
+			eprintln!("Failed to start puffin server: {}", err);
+		}
+	};
 }

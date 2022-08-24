@@ -329,56 +329,56 @@ pub use emath::{lerp, pos2, remap, remap_clamp, vec2, Align, Align2, NumExt, Pos
 #[cfg(feature = "color-hex")]
 pub use epaint::hex_color;
 pub use epaint::{
-    color, mutex,
-    text::{FontData, FontDefinitions, FontFamily, FontId, FontTweak},
-    textures::{TextureFilter, TexturesDelta},
-    ClippedPrimitive, Color32, ColorImage, FontImage, ImageData, Mesh, PaintCallback,
-    PaintCallbackInfo, Rgba, Rounding, Shape, Stroke, TextureHandle, TextureId,
+	color, mutex,
+	text::{FontData, FontDefinitions, FontFamily, FontId, FontTweak},
+	textures::{TextureFilter, TexturesDelta},
+	ClippedPrimitive, Color32, ColorImage, FontImage, ImageData, Mesh, PaintCallback,
+	PaintCallbackInfo, Rgba, Rounding, Shape, Stroke, TextureHandle, TextureId,
 };
 
 pub mod text {
-    pub use crate::text_edit::CCursorRange;
-    pub use epaint::text::{
-        cursor::CCursor, FontData, FontDefinitions, FontFamily, Fonts, Galley, LayoutJob,
-        LayoutSection, TextFormat, TAB_SIZE,
-    };
+	pub use crate::text_edit::CCursorRange;
+	pub use epaint::text::{
+		cursor::CCursor, FontData, FontDefinitions, FontFamily, Fonts, Galley, LayoutJob,
+		LayoutSection, TextFormat, TAB_SIZE,
+	};
 }
 
 pub use {
-    containers::*,
-    context::Context,
-    data::{
-        input::*,
-        output::{self, CursorIcon, FullOutput, PlatformOutput, WidgetInfo},
-    },
-    grid::Grid,
-    id::{Id, IdMap},
-    input_state::{InputState, MultiTouchInfo, PointerState},
-    layers::{LayerId, Order},
-    layout::*,
-    memory::Memory,
-    painter::Painter,
-    response::{InnerResponse, Response},
-    sense::Sense,
-    style::{FontSelection, Style, TextStyle, Visuals},
-    text::{Galley, TextFormat},
-    ui::Ui,
-    widget_text::{RichText, WidgetText},
-    widgets::*,
+	containers::*,
+	context::Context,
+	data::{
+		input::*,
+		output::{self, CursorIcon, FullOutput, PlatformOutput, WidgetInfo},
+	},
+	grid::Grid,
+	id::{Id, IdMap},
+	input_state::{InputState, MultiTouchInfo, PointerState},
+	layers::{LayerId, Order},
+	layout::*,
+	memory::Memory,
+	painter::Painter,
+	response::{InnerResponse, Response},
+	sense::Sense,
+	style::{FontSelection, Style, TextStyle, Visuals},
+	text::{Galley, TextFormat},
+	ui::Ui,
+	widget_text::{RichText, WidgetText},
+	widgets::*,
 };
 
 // ----------------------------------------------------------------------------
 
 /// Helper function that adds a label when compiling with debug assertions enabled.
 pub fn warn_if_debug_build(ui: &mut crate::Ui) {
-    if cfg!(debug_assertions) {
-        ui.label(
-            RichText::new("‼ Debug build ‼")
-                .small()
-                .color(ui.visuals().warn_fg_color),
-        )
-        .on_hover_text("egui was compiled with debug assertions enabled.");
-    }
+	if cfg!(debug_assertions) {
+		ui.label(
+			RichText::new("‼ Debug build ‼")
+				.small()
+				.color(ui.visuals().warn_fg_color),
+		)
+		.on_hover_text("egui was compiled with debug assertions enabled.");
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -392,10 +392,10 @@ pub fn warn_if_debug_build(ui: &mut crate::Ui) {
 /// ```
 #[macro_export]
 macro_rules! github_link_file_line {
-    ($github_url: expr, $label: expr) => {{
-        let url = format!("{}{}#L{}", $github_url, file!(), line!());
-        $crate::Hyperlink::from_label_and_url($label, url)
-    }};
+	($github_url: expr, $label: expr) => {{
+		let url = format!("{}{}#L{}", $github_url, file!(), line!());
+		$crate::Hyperlink::from_label_and_url($label, url)
+	}};
 }
 
 /// Create a [`Hyperlink`](crate::Hyperlink) to the current [`file!()`] on github.
@@ -407,10 +407,10 @@ macro_rules! github_link_file_line {
 /// ```
 #[macro_export]
 macro_rules! github_link_file {
-    ($github_url: expr, $label: expr) => {{
-        let url = format!("{}{}", $github_url, file!());
-        $crate::Hyperlink::from_label_and_url($label, url)
-    }};
+	($github_url: expr, $label: expr) => {{
+		let url = format!("{}{}", $github_url, file!());
+		$crate::Hyperlink::from_label_and_url($label, url)
+	}};
 }
 
 // ----------------------------------------------------------------------------
@@ -431,12 +431,12 @@ macro_rules! github_link_file {
 /// ```
 #[macro_export]
 macro_rules! trace {
-    ($ui: expr) => {{
-        $ui.trace_location(format!("{}:{}", file!(), line!()))
-    }};
-    ($ui: expr, $label: expr) => {{
-        $ui.trace_location(format!("{} - {}:{}", $label, file!(), line!()))
-    }};
+	($ui: expr) => {{
+		$ui.trace_location(format!("{}:{}", file!(), line!()))
+	}};
+	($ui: expr, $label: expr) => {{
+		$ui.trace_location(format!("{} - {}:{}", $label, file!(), line!()))
+	}};
 }
 
 // ----------------------------------------------------------------------------
@@ -477,69 +477,69 @@ macro_rules! egui_assert {
 /// In addition, egui supports a few special emojis that are not part of the unicode standard.
 /// This module contains some of them:
 pub mod special_emojis {
-    /// Tux, the Linux penguin.
-    pub const OS_LINUX: char = '🐧';
-    /// The Windows logo.
-    pub const OS_WINDOWS: char = '';
-    /// The Android logo.
-    pub const OS_ANDROID: char = '';
-    /// The Apple logo.
-    pub const OS_APPLE: char = '';
+	/// Tux, the Linux penguin.
+	pub const OS_LINUX: char = '🐧';
+	/// The Windows logo.
+	pub const OS_WINDOWS: char = '';
+	/// The Android logo.
+	pub const OS_ANDROID: char = '';
+	/// The Apple logo.
+	pub const OS_APPLE: char = '';
 
-    /// The Github logo.
-    pub const GITHUB: char = '';
-    /// The Twitter bird.
-    pub const TWITTER: char = '';
+	/// The Github logo.
+	pub const GITHUB: char = '';
+	/// The Twitter bird.
+	pub const TWITTER: char = '';
 
-    /// The word `git`.
-    pub const GIT: char = '';
+	/// The word `git`.
+	pub const GIT: char = '';
 
-    // I really would like to have ferris here.
+	// I really would like to have ferris here.
 }
 
 /// The different types of built-in widgets in egui
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum WidgetType {
-    Label, // TODO(emilk): emit Label events
-    /// e.g. a hyperlink
-    Link,
-    TextEdit,
-    Button,
-    Checkbox,
-    RadioButton,
-    SelectableLabel,
-    ComboBox,
-    Slider,
-    DragValue,
-    ColorButton,
-    ImageButton,
-    CollapsingHeader,
+	Label, // TODO(emilk): emit Label events
+	/// e.g. a hyperlink
+	Link,
+	TextEdit,
+	Button,
+	Checkbox,
+	RadioButton,
+	SelectableLabel,
+	ComboBox,
+	Slider,
+	DragValue,
+	ColorButton,
+	ImageButton,
+	CollapsingHeader,
 
-    /// If you cannot fit any of the above slots.
-    ///
-    /// If this is something you think should be added, file an issue.
-    Other,
+	/// If you cannot fit any of the above slots.
+	///
+	/// If this is something you think should be added, file an issue.
+	Other,
 }
 
 // ----------------------------------------------------------------------------
 
 /// For use in tests; especially doctests.
 pub fn __run_test_ctx(mut run_ui: impl FnMut(&Context)) {
-    let ctx = Context::default();
-    ctx.set_fonts(FontDefinitions::empty()); // prevent fonts from being loaded (save CPU time)
-    let _ = ctx.run(Default::default(), |ctx| {
-        run_ui(ctx);
-    });
+	let ctx = Context::default();
+	ctx.set_fonts(FontDefinitions::empty()); // prevent fonts from being loaded (save CPU time)
+	let _ = ctx.run(Default::default(), |ctx| {
+		run_ui(ctx);
+	});
 }
 
 /// For use in tests; especially doctests.
 pub fn __run_test_ui(mut add_contents: impl FnMut(&mut Ui)) {
-    let ctx = Context::default();
-    ctx.set_fonts(FontDefinitions::empty()); // prevent fonts from being loaded (save CPU time)
-    let _ = ctx.run(Default::default(), |ctx| {
-        crate::CentralPanel::default().show(ctx, |ui| {
-            add_contents(ui);
-        });
-    });
+	let ctx = Context::default();
+	ctx.set_fonts(FontDefinitions::empty()); // prevent fonts from being loaded (save CPU time)
+	let _ = ctx.run(Default::default(), |ctx| {
+		crate::CentralPanel::default().show(ctx, |ui| {
+			add_contents(ui);
+		});
+	});
 }

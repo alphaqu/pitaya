@@ -1,6 +1,5 @@
 Example how to use the [puffin profiler](https://github.com/EmbarkStudios/puffin) with an `eframe` app.
 
-
 ```sh
 cargo run -p puffin_profiler &
 

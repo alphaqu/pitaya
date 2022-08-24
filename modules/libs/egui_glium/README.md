@@ -6,7 +6,9 @@
 ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Apache](https://img.shields.io/badge/license-Apache-blue.svg)
 
-This crates provides bindings between [`egui`](https://github.com/emilk/egui) and [glium](https://crates.io/crates/glium) which allows you to write GUI code using egui and compile it and run it natively, cross platform.
+This crates provides bindings between [`egui`](https://github.com/emilk/egui)
+and [glium](https://crates.io/crates/glium) which allows you to write GUI code using egui and compile it and run it
+natively, cross platform.
 
 To use on Linux, first run:
 

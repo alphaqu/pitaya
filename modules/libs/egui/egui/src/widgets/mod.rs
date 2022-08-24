@@ -47,14 +47,14 @@ pub use text_edit::{TextBuffer, TextEdit};
 /// `|ui: &mut Ui| -> Response { … }` also implements [`Widget`].
 #[must_use = "You should put this widget in an ui with `ui.add(widget);`"]
 pub trait Widget {
-    /// Allocate space, interact, paint, and return a [`Response`].
-    ///
-    /// Note that this consumes `self`.
-    /// This is because most widgets ([`Button`], [`TextEdit`] etc) are
-    /// [builders](https://doc.rust-lang.org/1.0.0/style/ownership/builders.html)
-    ///
-    /// Tip: you can `impl Widget for &mut YourObject { }`.
-    fn ui(self, ui: &mut Ui) -> Response;
+	/// Allocate space, interact, paint, and return a [`Response`].
+	///
+	/// Note that this consumes `self`.
+	/// This is because most widgets ([`Button`], [`TextEdit`] etc) are
+	/// [builders](https://doc.rust-lang.org/1.0.0/style/ownership/builders.html)
+	///
+	/// Tip: you can `impl Widget for &mut YourObject { }`.
+	fn ui(self, ui: &mut Ui) -> Response;
 }
 
 /// This enables functions that return `impl Widget`, so that you can
@@ -75,16 +75,16 @@ pub trait Widget {
 /// ```
 impl<F> Widget for F
 where
-    F: FnOnce(&mut Ui) -> Response,
+	F: FnOnce(&mut Ui) -> Response,
 {
-    fn ui(self, ui: &mut Ui) -> Response {
-        self(ui)
-    }
+	fn ui(self, ui: &mut Ui) -> Response {
+		self(ui)
+	}
 }
 
 /// Helper so that you can do `TextEdit::State::read…`
 pub trait WidgetWithState {
-    type State;
+	type State;
 }
 
 // ----------------------------------------------------------------------------
@@ -92,63 +92,63 @@ pub trait WidgetWithState {
 /// Show a button to reset a value to its default.
 /// The button is only enabled if the value does not already have its original value.
 pub fn reset_button<T: Default + PartialEq>(ui: &mut Ui, value: &mut T) {
-    reset_button_with(ui, value, T::default());
+	reset_button_with(ui, value, T::default());
 }
 /// Show a button to reset a value to its default.
 /// The button is only enabled if the value does not already have its original value.
 pub fn reset_button_with<T: PartialEq>(ui: &mut Ui, value: &mut T, reset_value: T) {
-    if ui
-        .add_enabled(*value != reset_value, Button::new("Reset"))
-        .clicked()
-    {
-        *value = reset_value;
-    }
+	if ui
+		.add_enabled(*value != reset_value, Button::new("Reset"))
+		.clicked()
+	{
+		*value = reset_value;
+	}
 }
 
 // ----------------------------------------------------------------------------
 
 pub fn stroke_ui(ui: &mut crate::Ui, stroke: &mut epaint::Stroke, text: &str) {
-    let epaint::Stroke { width, color } = stroke;
-    ui.horizontal(|ui| {
-        ui.add(DragValue::new(width).speed(0.1).clamp_range(0.0..=5.0))
-            .on_hover_text("Width");
-        ui.color_edit_button_srgba(color);
-        ui.label(text);
+	let epaint::Stroke { width, color } = stroke;
+	ui.horizontal(|ui| {
+		ui.add(DragValue::new(width).speed(0.1).clamp_range(0.0..=5.0))
+			.on_hover_text("Width");
+		ui.color_edit_button_srgba(color);
+		ui.label(text);
 
-        // stroke preview:
-        let (_id, stroke_rect) = ui.allocate_space(ui.spacing().interact_size);
-        let left = stroke_rect.left_center();
-        let right = stroke_rect.right_center();
-        ui.painter().line_segment([left, right], (*width, *color));
-    });
+		// stroke preview:
+		let (_id, stroke_rect) = ui.allocate_space(ui.spacing().interact_size);
+		let left = stroke_rect.left_center();
+		let right = stroke_rect.right_center();
+		ui.painter().line_segment([left, right], (*width, *color));
+	});
 }
 
 pub(crate) fn shadow_ui(ui: &mut Ui, shadow: &mut epaint::Shadow, text: &str) {
-    let epaint::Shadow { extrusion, color } = shadow;
-    ui.horizontal(|ui| {
-        ui.label(text);
-        ui.add(
-            DragValue::new(extrusion)
-                .speed(1.0)
-                .clamp_range(0.0..=100.0),
-        )
-        .on_hover_text("Extrusion");
-        ui.color_edit_button_srgba(color);
-    });
+	let epaint::Shadow { extrusion, color } = shadow;
+	ui.horizontal(|ui| {
+		ui.label(text);
+		ui.add(
+			DragValue::new(extrusion)
+				.speed(1.0)
+				.clamp_range(0.0..=100.0),
+		)
+		.on_hover_text("Extrusion");
+		ui.color_edit_button_srgba(color);
+	});
 }
 
 /// Show a small button to switch to/from dark/light mode (globally).
 pub fn global_dark_light_mode_switch(ui: &mut Ui) {
-    let style: crate::Style = (*ui.ctx().style()).clone();
-    let new_visuals = style.visuals.light_dark_small_toggle_button(ui);
-    if let Some(visuals) = new_visuals {
-        ui.ctx().set_visuals(visuals);
-    }
+	let style: crate::Style = (*ui.ctx().style()).clone();
+	let new_visuals = style.visuals.light_dark_small_toggle_button(ui);
+	if let Some(visuals) = new_visuals {
+		ui.ctx().set_visuals(visuals);
+	}
 }
 
 /// Show larger buttons for switching between light and dark mode (globally).
 pub fn global_dark_light_mode_buttons(ui: &mut Ui) {
-    let mut visuals = ui.ctx().style().visuals.clone();
-    visuals.light_dark_radio_buttons(ui);
-    ui.ctx().set_visuals(visuals);
+	let mut visuals = ui.ctx().style().visuals.clone();
+	visuals.light_dark_radio_buttons(ui);
+	ui.ctx().set_visuals(visuals);
 }

@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 egui = { path = "../libs/egui/egui" }
-ptya-icon = { path = "../ptya-icon"}
-ptya-animation = { path = "../ptya-animation"}
-ptya-asset = { path = "../ptya-asset"}
-ptya-color = { path = "../ptya-color"}
+ptya-icon = { path = "../ptya-icon" }
+ptya-animation = { path = "../ptya-animation" }
+ptya-asset = { path = "../ptya-asset" }
+ptya-color = { path = "../ptya-color" }
 
 anyways = { version = "0.3.0", features = ["sync", "send"] }
 tokio = { version = "1", features = ["full"] }

@@ -9,8 +9,6 @@ If you are content of having egui sit on top of a 3D background, take a look at:
 * [`bevy_egui`](https://github.com/mvlabat/bevy_egui)
 * [`three-d`](https://github.com/asny/three-d)
 
-
-
 ```sh
 cargo run -p custom_3d_three-d
 ```

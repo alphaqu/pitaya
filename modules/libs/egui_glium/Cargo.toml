@@ -12,11 +12,11 @@ repository = "https://github.com/emilk/egui/tree/master/egui_glium"
 categories = ["gui", "game-development"]
 keywords = ["glium", "egui", "gui", "gamedev"]
 include = [
-  "../LICENSE-APACHE",
-  "../LICENSE-MIT",
-  "**/*.rs",
-  "Cargo.toml",
-  "src/shader/*.glsl",
+    "../LICENSE-APACHE",
+    "../LICENSE-MIT",
+    "**/*.rs",
+    "Cargo.toml",
+    "src/shader/*.glsl",
 ]
 
 [package.metadata.docs.rs]
@@ -40,7 +40,7 @@ screen_reader = ["egui-winit/screen_reader"]
 
 [dependencies]
 egui = { path = "../egui/egui", default-features = false, features = [
-  "bytemuck",
+    "bytemuck",
 ] }
 egui-winit = { path = "../egui/egui-winit", default-features = false }
 

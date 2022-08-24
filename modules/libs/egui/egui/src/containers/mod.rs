@@ -13,13 +13,13 @@ pub(crate) mod scroll_area;
 pub(crate) mod window;
 
 pub use {
-    area::Area,
-    collapsing_header::{CollapsingHeader, CollapsingResponse},
-    combo_box::*,
-    frame::Frame,
-    panel::{CentralPanel, SidePanel, TopBottomPanel},
-    popup::*,
-    resize::Resize,
-    scroll_area::ScrollArea,
-    window::Window,
+	area::Area,
+	collapsing_header::{CollapsingHeader, CollapsingResponse},
+	combo_box::*,
+	frame::Frame,
+	panel::{CentralPanel, SidePanel, TopBottomPanel},
+	popup::*,
+	resize::Resize,
+	scroll_area::ScrollArea,
+	window::Window,
 };

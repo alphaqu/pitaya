@@ -22,10 +22,10 @@ vec4 linear_from_srgba(vec4 srgba) {
 
 void main() {
     gl_Position = vec4(
-                      2.0 * a_pos.x / u_screen_size.x - 1.0,
-                      1.0 - 2.0 * a_pos.y / u_screen_size.y,
-                      0.0,
-                      1.0);
+    2.0 * a_pos.x / u_screen_size.x - 1.0,
+    1.0 - 2.0 * a_pos.y / u_screen_size.y,
+    0.0,
+    1.0);
     // egui encodes vertex colors in gamma spaces, so we must decode the colors here:
     v_rgba = linear_from_srgba(a_srgba);
     v_tc = a_tc;

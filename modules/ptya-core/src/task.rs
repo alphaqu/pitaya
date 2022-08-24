@@ -1,7 +1,7 @@
 use std::future::Future;
 
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::Arc;
-use std::sync::mpsc::{Receiver, sync_channel, SyncSender};
 use tokio::runtime::Runtime;
 
 pub struct Task<O: Send + 'static> {
@@ -23,9 +23,8 @@ impl<O: Send + 'static> Task<O> {
 	}
 
 	pub fn launch<F>(&mut self, func: F) -> Result<(), TaskAlreadyInProgress>
-		where
-			F: 'static + Send + Future<Output=O>,
-
+	where
+		F: 'static + Send + Future<Output = O>,
 	{
 		if self.in_progress {
 			return Err(TaskAlreadyInProgress {});
@@ -44,12 +43,12 @@ impl<O: Send + 'static> Task<O> {
 	pub fn in_progress(&self) -> bool {
 		self.in_progress
 	}
-	
+
 	pub fn recv(&mut self) -> Option<O> {
 		if !self.in_progress {
 			return None;
 		}
-		
+
 		let option = self.receiver.recv().ok();
 		if option.is_some() {
 			self.in_progress = false;
@@ -70,6 +69,4 @@ impl<O: Send + 'static> Task<O> {
 }
 
 #[derive(Debug)]
-pub struct TaskAlreadyInProgress {
-
-}
+pub struct TaskAlreadyInProgress {}

@@ -13,7 +13,7 @@ anyways = { version = "0.3.0", features = ["sync", "send"] }
 
 glium = "0.31"
 egui_glium = { path = "../libs/egui_glium" }
-egui =  {path = "../libs/egui/egui" }
+egui = { path = "../libs/egui/egui" }
 
 # Apps
 ptya-playground = { path = "../apps/ptya-playground" }

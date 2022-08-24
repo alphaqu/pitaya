@@ -1,26 +1,26 @@
 use crate::geometry::fill::MultiPolygonGeometry;
 use crate::geometry::path::MultiPathGeometry;
 
-pub mod path;
 pub mod fill;
+pub mod path;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub enum GeometryKind {
-    Path,
-    Fill,
+	Path,
+	Fill,
 }
 
 pub enum GeometryData {
-    Path(MultiPathGeometry),
-    Fill(MultiPolygonGeometry),
+	Path(MultiPathGeometry),
+	Fill(MultiPolygonGeometry),
 }
 
 impl GeometryData {
-    pub fn get_kind(&self) -> GeometryKind {
-        match &self {
-            GeometryData::Path(_) => GeometryKind::Path,
-            GeometryData::Fill(_) => GeometryKind::Fill,
-        }
-    }
+	pub fn get_kind(&self) -> GeometryKind {
+		match &self {
+			GeometryData::Path(_) => GeometryKind::Path,
+			GeometryData::Fill(_) => GeometryKind::Fill,
+		}
+	}
 }

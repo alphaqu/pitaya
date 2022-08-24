@@ -1,13 +1,12 @@
-use proc_macro::{Literal, Span};
 use ahash::AHashMap;
 use lazy_static::lazy_static;
-use syn::{LitInt, LitStr};
+use proc_macro::{Literal, Span};
 use syn::__private::ToTokens;
+use syn::{LitInt, LitStr};
 
-
-lazy_static!(
-	 static ref LOOKUP: AHashMap<String, String> =  create_lookup();
-);
+lazy_static! {
+	static ref LOOKUP: AHashMap<String, String> = create_lookup();
+};
 
 #[proc_macro]
 pub fn icon(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -17,13 +16,11 @@ pub fn icon(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 		None => {
 			panic!("Icon \"{name}\" does not exist.")
 		}
-		Some(codepoint) => {
-			LitInt::new(codepoint, lit.span()).to_token_stream().into()
-		}
+		Some(codepoint) => LitInt::new(codepoint, lit.span()).to_token_stream().into(),
 	}
 }
 
-fn create_lookup() ->  AHashMap<String, String> {
+fn create_lookup() -> AHashMap<String, String> {
 	let codepoints = include_str!("./codepoints");
 	let mut lookup = AHashMap::new();
 	for entry in codepoints.split('\n') {

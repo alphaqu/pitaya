@@ -1,7 +1,7 @@
+use crate::ui::Pui;
+use egui::Id;
 use glium::framebuffer::SimpleFrameBuffer;
 use semver::Version;
-use egui::{Id};
-use crate::ui::Pui;
 
 pub trait App: Send {
 	/// Runs every frame.
