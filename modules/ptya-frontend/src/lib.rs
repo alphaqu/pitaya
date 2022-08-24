@@ -1,40 +1,64 @@
-#![feature(stmt_expr_attributes)]
-#![feature(drain_filter)]
+#![feature(hash_drain_filter)]
 
-use crate::content::ContentPanel;
-use crate::sidebar::SidebarPanel;
-use egui::{LayerId, Pos2, Rect, Stroke, Vec2};
-
+use std::rc::Rc;
+use anyways::ext::AuditExt;
 use ptya_core::System;
-pub const WIDGET_WIDTH: f32 = 440.0;
-pub const WIDGET_ADD_SIZE: f32 = 150.0;
+use crate::content::Content;
+use crate::dropper::AppDropper;
+use crate::sidebar::Sidebar;
+use anyways::Result;
+use glium::backend::Context;
+use log::info;
 
-pub mod content;
-pub mod sidebar;
+mod sidebar;
+mod content;
+mod dropper;
+
+const DEBUG_MODE: bool = false;
 
 pub struct Frontend {
-    sidebar: SidebarPanel,
-    content: ContentPanel,
+    system: System,
+    sidebar: Sidebar,
+    content: Content,
+    dropper: Option<AppDropper>
 }
 
 impl Frontend {
-    pub fn new(system: &mut System) -> Frontend {
-        Frontend {
-            sidebar: SidebarPanel::new(system),
-            content: ContentPanel::new(),
-        }
+    pub fn new(ctx: egui::Context, gl_ctx: Rc<Context>) -> Result<Frontend> {
+       Ok( Frontend {
+           system: System::new(ctx, gl_ctx).wrap_err("Failed to init early system")?,
+           sidebar: Sidebar::new(),
+           content: Content::new(),
+           dropper: None
+       })
     }
 
-    pub fn tick(&mut self, system: &mut System) {
-        let painter = system.egui_ctx.layer_painter(LayerId::background());
-        painter.rect(
-            Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::INFINITY),
-            0.0,
-            system.color.new_state().bg,
-            Stroke::none(),
-        );
-        self.sidebar
-            .update(system, &mut self.content);
-        self.content.update(system);
+    pub fn tick(&mut self) -> Result<()> {
+        if self.system.is_loaded() {
+            if let Some(dropper) = &mut self.dropper {
+                dropper.tick(&self.system);
+                self.system.egui_ctx.request_repaint();
+            }
+
+            self.sidebar.tick(&self.system, &mut self.dropper);
+            self.content.tick(&self.system, &mut self.dropper);
+
+            let mut finished = false;
+            if let Some(dropper) = &mut self.dropper {
+                finished = dropper.finish(&self.system);
+            }
+
+            if finished {
+                self.dropper = None;
+            }
+        }
+
+        // Updated
+        if self.system.tick()? {
+            self.system.app.load_app(&self.system, ptya_playground::manifest(), ptya_playground::load());
+            self.sidebar.update(&self.system);
+        }
+
+        Ok(())
     }
 }

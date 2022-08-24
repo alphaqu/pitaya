@@ -1,5 +1,5 @@
 [package]
-name = "ptya-frontend"
+name = "ptya-layout"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,9 +7,13 @@ edition = "2021"
 
 [dependencies]
 ptya-core = { path = "../ptya-core" }
+ptya-icon = { path = "../ptya-icon" }
 log = "0.4"
+anyways = { version = "0.3.0", features = ["sync", "send"] }
 
 glium = "0.31"
 egui_glium = { path = "../libs/egui_glium" }
 egui =  {path = "../libs/egui/egui" }
 
+# Apps
+ptya-playground = { path = "../apps/ptya-playground" }

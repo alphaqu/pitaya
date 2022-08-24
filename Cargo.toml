@@ -20,7 +20,7 @@ image = { version = "0.24", default-features = false, features = ["png"] }
 
 # Modules
 ptya-core = { path = "modules/ptya-core" }
-ptya-layout = { path = "modules/ptya-layout" }
+ptya-layout = { path = "modules/ptya-frontend" }
 #ptya-glfw-glium = { path = "modules/ptya-glfw-glium" }
 #ptya-frontend = { path = "modules/ptya-frontend" }
 
@@ -34,21 +34,23 @@ log = "0.4"
 [workspace]
 members = [
     "modules/libs/atlas",
+    "modules/libs/delaunator",
+    # EGUI
     "modules/libs/egui/egui",
     "modules/libs/egui/emath",
     "modules/libs/egui/epaint",
     "modules/libs/egui/egui-winit",
+    "modules/libs/egui_glium",
+
     #"modules/ptya-map",
-    "modules/apps/ptya-map-v2",
+    #"modules/apps/ptya-map-v2",
+    # Apps
     "modules/apps/ptya-playground",
+    # Modules
     "modules/ptya-core",
     "modules/ptya-icon",
-    "modules/ptya-layout",
-    "modules/ptya-common",
+    "modules/ptya-frontend"
    # "modules/ptya-spotify",
-    "modules/ptya-frontend",
-    "modules/libs/egui_glium",
-    "modules/libs/delaunator",
 ]
 
 [profile.dev]
