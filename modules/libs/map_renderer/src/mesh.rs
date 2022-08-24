@@ -48,9 +48,10 @@ impl MeshBuilder {
 				PrimitiveType::TrianglesList,
 				&self.compile.indices,
 			)
-			.unwrap(),
+				.unwrap(),
 			vertices_data: self.compile.vertices,
 			styles: self.compile.styles,
+			force_update: true
 		}
 	}
 }
@@ -60,6 +61,8 @@ pub const FULL_WRITE_THRESHOLD: f32 = 0.5;
 
 pub struct Mesh {
 	pub data: TileData,
+	pub force_update: bool,
+
 
 	vertices_data: Vec<MapVertex>,
 	pub vertices: VertexBuffer<MapVertex>,
@@ -74,6 +77,7 @@ impl Mesh {
 
 		let mut update = MeshUpdate {
 			scale,
+			force_update: self.force_update,
 			pos: 0,
 			vertices: &mut self.vertices_data,
 			styles: &mut self.styles,
@@ -96,6 +100,7 @@ impl Mesh {
 				slice.write(&self.vertices_data[range]);
 			}
 		}
+		self.force_update = false;
 	}
 }
 
@@ -122,7 +127,6 @@ impl StyleHandler for MeshCompile {
 
 		style.prepare(self.scale);
 		style.compile(input.into(), &mut self.vertices, &mut self.indices);
-
 		self.styles.push(StyleAllocation {
 			old_style: Box::new(style),
 			vertices_range: start..self.vertices.len(),
@@ -132,6 +136,7 @@ impl StyleHandler for MeshCompile {
 
 struct MeshUpdate<'a> {
 	scale: f32,
+	force_update: bool,
 	pos: usize,
 	vertices: &'a mut Vec<MapVertex>,
 	styles: &'a mut [StyleAllocation],
@@ -148,7 +153,7 @@ impl<'b> StyleHandler for MeshUpdate<'b> {
 			.old_style
 			.downcast_mut::<S>()
 			.expect("Stylers changed with the same tile data. This is very wrong.");
-		if style.needs_update(*old_styler) {
+		if self.force_update || style.needs_update(*old_styler) {
 			let range = alloc.vertices_range.clone();
 			let mut combined = false;
 			if let Some(last) = self.changes.last_mut() {
@@ -162,7 +167,11 @@ impl<'b> StyleHandler for MeshUpdate<'b> {
 				self.changes.push(range.clone());
 			}
 
-			style.update(input.into(), &mut self.vertices[range], Some(*old_styler));
+			style.update(input.into(), &mut self.vertices[range], if self.force_update {
+				None
+			} else {
+				Some(*old_styler)
+			});
 		}
 
 		*old_styler = style;

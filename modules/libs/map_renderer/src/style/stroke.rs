@@ -48,7 +48,7 @@ impl Style for StrokeStyle {
 	}
 
 	fn compile(&self, input: Self::Input<'_>, v: &mut Vec<MapVertex>, i: &mut Vec<u32>) {
-		let half_width = (1.0 / 8192.0) / 2.0;
+		let half_width = (1.0 / 8192.0) / 4.0;
 
 		let start = v.len();
 		let len = input.path.len() * 2;
