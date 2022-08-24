@@ -45,13 +45,13 @@ impl AppComp {
 }
 
 pub struct AppContainer {
-    pub app: Box<dyn AppImpl>,
+    pub app: Box<dyn App>,
     pub buffer: Rc<SrgbTexture2d>,
     pub manifest: Manifest,
 }
 
 impl AppContainer {
-    pub fn new(ctx: &Rc<Context>, manifest: Manifest, app: Box<dyn AppImpl>) -> AppContainer {
+    pub fn new(ctx: &Rc<Context>, manifest: Manifest, app: Box<dyn App>) -> AppContainer {
         AppContainer {
             app,
             buffer: Rc::new(
@@ -123,7 +123,7 @@ impl AppContainer {
     }
 }
 
-pub trait AppImpl: Send {
+pub trait App: Send {
     /// Runs after initialization and every time a setting (like a theme) changes.
     fn update(&mut self, system: &mut System);
 
@@ -147,7 +147,7 @@ pub struct AppId {
 }
 
 impl AppId {
-    pub fn egui_id(&self) -> egui::Id {
+    pub fn egui_id(&self) -> Id {
         Id::new("pitaya@app_id").with(&self.id)
     }
 }

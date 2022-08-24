@@ -20,8 +20,8 @@ impl AssetComp {
         #[cfg(debug_assertions)]
         return AssetComp {
             assets: PathBuf::from("./assets"),
-            user: PathBuf::from("./user"),
-            cache: PathBuf::from("./cache"),
+            user: PathBuf::from("../../../home/user"),
+            cache: PathBuf::from("../../../home/cache"),
         };
         #[cfg(not(debug_assertions))]
         panic!()

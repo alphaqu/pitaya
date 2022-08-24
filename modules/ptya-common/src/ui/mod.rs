@@ -1,4 +1,4 @@
-use crate::app::{AppImpl, Manifest};
+use crate::app::{App, Manifest};
 use crate::color::color::{ColorGroup, ColorState, ColorType};
 use crate::settings::ROUNDING_SIZE;
 use crate::ui::widgets::button::Button;
@@ -33,7 +33,7 @@ impl WidgetApp {
     }
 }
 
-impl AppImpl for WidgetApp {
+impl App for WidgetApp {
     fn update(&mut self, system: &mut System) {
         todo!()
     }

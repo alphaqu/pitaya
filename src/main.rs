@@ -11,12 +11,13 @@ use egui::{
 // use glfw::{WindowMode};
 use glium::backend::Facade;
 use glutin::platform::unix::WindowBuilderExtUnix;
-use ptya_common::settings::INTERACTIVE_SIZE;
-use ptya_common::System;
-use ptya_frontend::Frontend;
+//use ptya_common::settings::INTERACTIVE_SIZE;
+//use ptya_common::System;
+//use ptya_frontend::Frontend;
 use std::rc::Rc;
 use tokio::runtime::Handle;
 use tokio::task::block_in_place;
+use ptya_layout::Frontend;
 //use eframe::{App, NativeOptions, run_native};
 
 //use ptya_glfw_glium::EguiGlfwGlium;
@@ -115,9 +116,10 @@ fn create_display(
 }
 
 pub struct Pitaya {
-    system: System,
-    frontend: Option<Frontend>, //sidebar: SidebarPanel,
-                                //content: ContentPanel,
+   // system: System,
+    //     frontend: Option<Frontend>, //sidebar: SidebarPanel,
+    //                                 //content: ContentPanel,
+    frontend: Frontend,
 }
 
 impl Pitaya {
@@ -129,21 +131,22 @@ impl Pitaya {
             // sidebar: SidebarPanel::new(&ctx, &system),
             // content: ContentPanel::new(),
             // system,
-            system: System::new(ctx.clone(), opengl.clone()).expect("Failed to initialize system"),
-            frontend: None,
+           // system: System::new(ctx.clone(), opengl.clone()).expect("Failed to initialize system"),
+            frontend: Frontend::new(ctx.clone(), opengl.clone()).unwrap(),
         }
     }
 
-    fn update(&mut self, ctx: &Context) {
-        if !self.system.is_loaded() {
-            self.system.tick().unwrap();
-            if self.system.is_loaded() {
-                self.frontend = Some(Frontend::new(&mut self.system));
-            }
-        } else if let Some(frontend) = &mut self.frontend {
-            self.system.animation.tick(ctx);
-            frontend.tick(&mut self.system);
-        }
+    fn update(&mut self, ctx: &Context){
+        self.frontend.tick().unwrap();
+        //if !self.system.is_loaded() {
+        //    self.system.tick().unwrap();
+        //    if self.system.is_loaded() {
+        //        self.frontend = Some(Frontend::new(&mut self.system));
+        //    }
+        //} else if let Some(frontend) = &mut self.frontend {
+        //    self.system.animation.tick(ctx);
+        //    frontend.tick(&mut self.system);
+        //}
         //self.sidebar
         //    .update(ctx, &mut self.system, &mut self.content);
         //self.content.update(ctx, &mut self.system);

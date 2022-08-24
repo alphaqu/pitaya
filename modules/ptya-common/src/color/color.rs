@@ -32,7 +32,6 @@ pub struct ColorSettings {
 
 impl ColorSettings {
     pub fn new(theme: &Theme) -> Result<ColorSettings, FromHexError> {
-
         let red = ColorGroup::new(&theme.base)?;
         Ok(ColorSettings {
             theme_id: theme.id.to_string(),

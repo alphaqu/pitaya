@@ -1,6 +1,6 @@
 use crate::asset::Location;
 use crate::color::color::{ColorSettings, ColorState, ColorType};
-use crate::color::theme::{Theme, ThemeColors};
+use crate::color::theme::{Theme};
 use crate::ui::animation::lerp::Lerp;
 use crate::{AssetComp, Settings};
 use anyways::ext::AuditExt;

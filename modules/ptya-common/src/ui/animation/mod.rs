@@ -11,21 +11,7 @@ use fxhash::FxHashMap;
 use std::collections::hash_map::Entry;
 use tokio::time::Instant;
 
-pub trait ContextHolder {
-    fn get_context(&self) -> &Context;
-}
 
-impl ContextHolder for Ui {
-    fn get_context(&self) -> &Context {
-        self.ctx()
-    }
-}
-
-impl ContextHolder for Context {
-    fn get_context(&self) -> &Context {
-        self
-    }
-}
 
 pub struct AnimationComp {
     animations: FxHashMap<Id, Animation>,

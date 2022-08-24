@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ptya-common = { path = "../ptya-common" }
+ptya-core = { path = "../ptya-core" }
 log = "0.4"
 
 glium = "0.31"
-egui_glium = { path = "../egui_glium" }
-egui =  {path = "../egui/egui"}
+egui_glium = { path = "../libs/egui_glium" }
+egui =  {path = "../libs/egui/egui" }
 

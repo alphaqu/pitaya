@@ -6,10 +6,10 @@ use egui::epaint::Shadow;
 use egui::style::Margin;
 use egui::{Context, Frame, Id, LayerId, Order, Pos2, Rect, Rounding, Sense, Stroke, Ui, Vec2};
 use opening_app::{DraggingApp, OpenAppLocation};
-use ptya_common::app::AppId;
-use ptya_common::color::color::{ColorState, ColorType};
-use ptya_common::settings::{SPACING_SIZE, WIDGET_ADD_SIZE, WIDGET_WIDTH};
-use ptya_common::System;
+use ptya_core::app::AppId;
+use ptya_core::System;
+use ptya_core::ui::{Pui, SPACING_SIZE};
+use crate::{WIDGET_ADD_SIZE, WIDGET_WIDTH};
 
 pub struct ContentPanel {
     pub id: Id,
@@ -26,7 +26,7 @@ impl ContentPanel {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context, system: &mut System) {
+    pub fn update(&mut self, system: &mut System) {
         egui::CentralPanel::default()
             .frame(Frame {
                 inner_margin: Margin::same(SPACING_SIZE),
@@ -36,35 +36,37 @@ impl ContentPanel {
                 fill: Default::default(),
                 stroke: Default::default(),
             })
-            .show(ctx, |ui| {
+            .show(&system.egui_ctx, |ui| {
+                let mut ui = Pui::new(ui, system, system.color.new_state());
+
                 self.id = ui.id();
 
                 let content_rect = ui.max_rect();
 
                 // Primary rectangle area setup
-                self.update_primary(ui, system, content_rect);
-                self.update_widgets(ui, system);
+                self.update_primary(&mut ui,  content_rect);
+                self.update_widgets(&mut ui);
 
                 if let Some(dragged) = &mut self.dragging_app {
-                    dragged.update(ui, system, &mut self.apps, content_rect);
-                    if dragged.for_removal(ui) {
+                    dragged.update(&mut ui, &mut self.apps, content_rect);
+                    if dragged.for_removal(&ui) {
                         self.dragging_app = None;
                     }
                 }
 
                 for widget in &mut self.apps.widgets {
-                    widget.draw(ui, system, &mut self.dragging_app);
+                    widget.draw(&mut ui,  &mut self.dragging_app);
                 }
 
                 if let Some(primary) = &mut self.apps.primary {
-                    primary.draw(ui, system, &mut self.dragging_app);
+                    primary.draw(&mut ui, &mut self.dragging_app);
                 }
 
                 self.apps.finalize();
             });
     }
 
-    fn update_widgets(&mut self, ui: &mut Ui, system: &mut System) {
+    fn update_widgets(&mut self, ui: &mut Pui) {
         let widgets = self.apps.widgets.len() as f32;
         let rect = ui.max_rect();
         let widget_height = (rect.height() - (SPACING_SIZE * (widgets - 1.0))) / widgets;
@@ -123,7 +125,7 @@ impl ContentPanel {
         }
     }
 
-    fn update_primary(&mut self, ui: &mut Ui, system: &mut System, content_rect: Rect) {
+    fn update_primary(&mut self, ui: &mut Pui, content_rect: Rect) {
         let mut primary_rect = content_rect;
         if !self.apps.widgets.is_empty() {
             // If there are widgets make the primary smaller to allow for the widgets to exist

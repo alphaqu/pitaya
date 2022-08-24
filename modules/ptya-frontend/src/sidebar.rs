@@ -7,10 +7,8 @@ use egui::{
     pos2, Color32, ColorImage, Context, Frame, ImageData, Mesh, Rect, TextureHandle, Ui, Vec2,
 };
 use log::{debug, info};
-use ptya_common::app::AppId;
-use ptya_common::color::color::{ColorState, ColorType};
-use ptya_common::settings::{INTERACTIVE_SIZE, SPACING_SIZE};
-use ptya_common::System;
+use ptya_core::System;
+use ptya_core::ui::{INTERACTIVE_SIZE, Pui, SPACING_SIZE};
 
 pub struct SidebarPanel {
     apps: Vec<SidebarAppEntry>,
@@ -19,33 +17,36 @@ pub struct SidebarPanel {
 impl SidebarPanel {
     pub fn new(system: &System) -> SidebarPanel {
         let mut apps = Vec::new();
-        for (id, app) in &system.app.read().unwrap().apps {
+        for (id, app) in system.app.apps().iter() {
             apps.push(SidebarAppEntry::new(id.clone()));
         }
 
         SidebarPanel { apps }
     }
 
-    pub fn update(&mut self, ctx: &Context, system: &mut System, content: &mut ContentPanel) {
+    pub fn update(&mut self, system: &mut System, content: &mut ContentPanel) {
         egui::SidePanel::new(Side::Left, "side_bar")
             .frame(Frame {
                 inner_margin: Margin::same(SPACING_SIZE),
                 outer_margin: Default::default(),
                 rounding: Default::default(),
                 shadow: Default::default(),
-                fill: system.color.bg(1.0, ColorType::Primary, ColorState::Idle),
+                fill: system.color.new_state().ascend(1.0).bg(),
                 stroke: Default::default(),
             })
             .max_width(SPACING_SIZE + INTERACTIVE_SIZE + SPACING_SIZE)
             .resizable(false)
-            .show(ctx, |ui| {
+            .show(&system.egui_ctx, |ui| {
+                let mut pui = Pui::new(ui, system, system.color.new_state());
+
+
                 let entry_size = Vec2::new(
                     INTERACTIVE_SIZE,
                     INTERACTIVE_SIZE,
                 );
 
                 for entry in &mut self.apps {
-                    entry.update(ui, content, system, entry_size);
+                    entry.update(&mut pui, content,  entry_size);
                     // Padding
                     //ui.allocate_space(Vec2::new(width, 25.0));
                 }
@@ -66,7 +67,7 @@ impl SidebarAppEntry {
         }
     }
 
-    pub fn update(&mut self, ui: &mut Ui, content: &mut ContentPanel, system: &System, size: Vec2) {
+    pub fn update(&mut self, ui: &mut Pui, content: &mut ContentPanel, size: Vec2) {
         let (id, rect) = ui.allocate_space(size);
         let response = ui.interact(rect, id, egui::Sense::click_and_drag());
 

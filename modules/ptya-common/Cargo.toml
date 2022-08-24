@@ -27,8 +27,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Frontend
-egui = {  path  = "../egui/egui" }
-epaint = {  path  = "../egui/epaint" }
+egui = {  path  = "../libs/egui/egui" }
+epaint = {  path  = "../libs/egui/epaint" }
 glium = "0.31"
 
 ttf-parser = "0.15"

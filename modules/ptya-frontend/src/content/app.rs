@@ -1,17 +1,16 @@
-use crate::content::opening_app::DraggingApp;
-use egui::epaint::Shadow;
-use egui::{Color32, Id, LayerId, Order, PaintCallback, Rect, Rgba, Rounding, Sense, Stroke, Ui, Vec2};
-use glium::framebuffer::{RenderBuffer, SimpleFrameBuffer, ToColorAttachment};
-use glium::texture::UncompressedFloatFormat;
-use glium::Surface;
-use log::{debug, info, trace};
-use ptya_common::ui::animation::state::State;
-use ptya_common::ui::animation::transition::Transition;
-use ptya_common::System;
 use std::rc::Rc;
-use ptya_common::app::AppId;
-use ptya_common::color::color::{ColorState, ColorType};
-use ptya_common::settings::SPACING_SIZE;
+
+use glium::framebuffer::SimpleFrameBuffer;
+use glium::Surface;
+use glium::texture::SrgbTexture2d;
+use log::{debug, info};
+
+use egui::{Area, PaintCallback, Rect, Rounding, Sense, Ui, Vec2};
+use egui::epaint::{ClippedShape, Shadow};
+use ptya_core::app::AppId;
+use ptya_core::ui::{Pui, ROUNDING, SPACING_SIZE};
+
+use crate::content::opening_app::DraggingApp;
 
 #[derive(Debug, Copy, Clone, Hash)]
 pub enum AppLocation {
@@ -20,7 +19,7 @@ pub enum AppLocation {
 }
 
 pub struct AppPanel {
-    rect: Transition<Rect>,
+    rect: Rect,
     app_id: AppId,
     dragging: bool,
     for_removal: bool,
@@ -29,11 +28,7 @@ pub struct AppPanel {
 impl AppPanel {
     pub fn new(ui: &Ui, app_id: AppId, rect: Rect) -> AppPanel {
         AppPanel {
-            rect: Transition {
-                state: State::basic(app_id.egui_id().with("panel"), ui),
-                from: rect,
-                to: rect,
-            },
+            rect,
             app_id,
             dragging: false,
             for_removal: false,
@@ -41,24 +36,80 @@ impl AppPanel {
     }
 
     pub fn set_rect(&mut self, rect: Rect, ui: &Ui) {
-        self.rect.set(ui, rect);
+        self.rect = rect;
     }
 
     pub fn draw(
         &mut self,
-        ui: &mut Ui,
-        system: &mut System,
+        ui: &mut Pui,
         dragging_app: &mut Option<DraggingApp>,
     ) {
-        let rect = self.rect.get(ui);
-        self.draw_indicator(ui, rect, system, dragging_app);
-        ui.allocate_ui_at_rect(rect, |ui| {
-            let arc = system.app.clone();
-            let mut guard = arc.write().unwrap();
-            let app = guard.get_mut_app(&self.app_id);
-            ui.set_clip_rect(rect);
-            app.tick(ui, rect, system);
-            
+        let rect = self.rect;
+        self.draw_indicator(ui, rect, dragging_app);
+        ui.allocate_ui_at_rect(rect, |egui_ui| {
+            let mut ui = ui.child(egui_ui, 0.0, None);
+
+            // Get app
+            let mut apps = ui.sys.app.apps();
+            let app = if let Some(app) = apps.get_mut(&self.app_id) {
+                app
+            } else {
+                return;
+            };
+
+            let ppp = ui.ctx().pixels_per_point();
+
+            let width = (rect.width() * ppp) as u32;
+            let height = (rect.height() * ppp) as u32;
+
+            // TODO redraw on actual change
+            let mut redraw = true;
+            if app.buffer.width() != width || app.buffer.height() != height {
+                app.buffer = Rc::new(SrgbTexture2d::empty(&ui.sys().gl_ctx, width, height).unwrap());
+                redraw = true;
+            }
+
+            if redraw {
+                let shape = {
+                    let mut fb = SimpleFrameBuffer::new(&ui.sys().gl_ctx, &*app.buffer).unwrap();
+                    fb.clear_color(0.0, 0.0, 0.0, 0.0);
+                    ui.painter().rect_filled(rect, ROUNDING, ui.color().bg());
+
+                    let id = ui.id().with("app_window");
+                    let area = Area::new(id)
+                        .movable(false)
+                        .fixed_pos(rect.min + Vec2::splat(SPACING_SIZE))
+                        .drag_bounds(rect.shrink(SPACING_SIZE));
+                    let layer_id = area.layer();
+
+                    area.show(ui.ctx(), |app_ui| {
+                        app_ui.set_clip_rect(app_ui.clip_rect().expand(SPACING_SIZE));
+                        let mut pui = ui.child(app_ui, 0.0, None);
+                        app.app.tick(&mut pui, &mut fb);
+                    });
+
+                    let shape: Vec<ClippedShape> = ui
+                        .ctx()
+                        .layer_painter(layer_id)
+                        .paint_list()
+                        .0
+                        .drain(..)
+                        .collect();
+                    shape
+                };
+
+                ui.painter().add(PaintCallback {
+                    rect,
+                    callback: Rc::new((app.buffer.clone(), shape)),
+                });
+            }
+
+            ui.painter().add(PaintCallback {
+                rect,
+                callback: Rc::new((app.buffer.clone(), ROUNDING)),
+            });
+
+
             //  match &mut app.app {
             //                 AppInstance::EGui(egui) => {
             //                     egui.tick(ui, &system.settings);
@@ -101,13 +152,7 @@ impl AppPanel {
         });
     }
 
-    fn draw_indicator(
-        &mut self,
-        ui: &mut Ui,
-        rect: Rect,
-        system: &System,
-        dragging_app: &mut Option<DraggingApp>,
-    ) {
+    fn draw_indicator(&mut self, ui: &mut Pui, rect: Rect, dragging_app: &mut Option<DraggingApp>) {
         let right_top = rect.right_top();
         let size = 50.0;
         let spacing_s = SPACING_SIZE / 2.0;
@@ -120,7 +165,7 @@ impl AppPanel {
             nw: 0.0,
             ne: size / 2.0,
             sw: size / 2.0,
-            se: 0.0
+            se: 0.0,
         };
 
         let response = ui.interact(
@@ -129,19 +174,14 @@ impl AppPanel {
             Sense::click_and_drag(),
         );
 
-
-        let state = ColorState::new(&response);
-        ui.painter().rect(
-            rect,
-            rounding,
-            system.color.bg(4.0, ColorType::Primary, state),
-            Stroke::none(),
-        );
+        ui.painter().rect_filled(rect, rounding, ui.color().bg());
         ui.painter().add(
-            system.color.shadow()
+            Shadow {
+                extrusion: 5.0,
+                color: ui.color().shadow,
+            }
             .tessellate(rect, rounding),
         );
-
 
         if response.clicked() {
             self.mark_removal();
@@ -151,7 +191,7 @@ impl AppPanel {
                 if self.dragging {
                     dragged.tick_response(ui, &response);
                 }
-            } else if response.drag_started() && !response.drag_released(){
+            } else if response.drag_started() && !response.drag_released() {
                 info!("briuh");
                 debug!(target: "drag-app", "APP: {:?} SOURCE: App Thingie", self.app_id);
                 *dragging_app = Some(DraggingApp::new(ui, rect, self.app_id.clone()));
@@ -160,7 +200,6 @@ impl AppPanel {
                 self.dragging = false;
             }
         }
-
     }
 
     pub fn mark_removal(&mut self) {
@@ -172,7 +211,7 @@ impl AppPanel {
     }
 
     pub fn rect(&mut self, ui: &Ui) -> Rect {
-        self.rect.get(ui)
+        self.rect
     }
 
     pub fn app_id(&self) -> &AppId {
