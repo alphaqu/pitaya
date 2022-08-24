@@ -33,7 +33,7 @@ log = "0.4"
 
 [workspace]
 members = [
-    "modules/libs/atlas",
+    "modules/libs/map_renderer",
     "modules/libs/delaunator",
     # EGUI
     "modules/libs/egui/egui",
