@@ -17,7 +17,7 @@ use glutin::platform::unix::WindowBuilderExtUnix;
 use std::rc::Rc;
 use tokio::runtime::Handle;
 use tokio::task::block_in_place;
-use ptya_layout::Frontend;
+use ptya_frontend::Frontend;
 //use eframe::{App, NativeOptions, run_native};
 
 //use ptya_glfw_glium::EguiGlfwGlium;

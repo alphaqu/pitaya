@@ -20,7 +20,7 @@ image = { version = "0.24", default-features = false, features = ["png"] }
 
 # Modules
 ptya-core = { path = "modules/ptya-core" }
-ptya-layout = { path = "modules/ptya-frontend" }
+ptya-frontend = { path = "modules/ptya-frontend" }
 #ptya-glfw-glium = { path = "modules/ptya-glfw-glium" }
 #ptya-frontend = { path = "modules/ptya-frontend" }
 
