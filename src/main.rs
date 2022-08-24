@@ -108,7 +108,7 @@ fn create_display(
 
     let context_builder = glutin::ContextBuilder::new()
         .with_depth_buffer(0)
-        .with_multisampling(0)
+        .with_multisampling(4)
         .with_srgb(true)
         .with_stencil_buffer(0);
 
@@ -137,6 +137,7 @@ impl Pitaya {
     }
 
     fn update(&mut self, ctx: &Context){
+
         self.frontend.tick().unwrap();
         //if !self.system.is_loaded() {
         //    self.system.tick().unwrap();

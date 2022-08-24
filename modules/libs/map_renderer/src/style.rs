@@ -41,7 +41,11 @@ pub trait Styler {
     /// * `layer`: The current layer name.
     /// * `features`: The features on this layer.
     fn visit_features<S: StyleHandler>(&self, handler: &mut S, layer: &str, zoom: f32, features: &[FeatureData]);
+    
+    fn get_z_index(&self, layer: &str) -> f32;
 }
+
+pub type ZIndex = f32;
 
 /// A StyleHandler is a consumer of all of the styles that a Styler might submit.
 pub trait StyleHandler {

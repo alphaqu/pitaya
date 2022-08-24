@@ -27,7 +27,11 @@ impl MeshBuilder {
 			styles: vec![],
 		};
 
-		// Filters unused layers.
+		// Order layers
+		data.layers.sort_by(|v0, v1| {
+			styler.get_z_index(&v0.name).total_cmp(&styler.get_z_index(&v1.name))
+		});
+
 		for data in &data.layers {
 			styler.visit_features(&mut compile, &data.name, zoom as f32, &data.features);
 		}

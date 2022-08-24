@@ -70,9 +70,8 @@ impl AppDropper {
 	pub fn finish(&mut self, sys: &System) -> bool {
 		let painter = sys
 			.egui_ctx
-			.layer_painter(LayerId::new(Order::Tooltip, Id::null()));
+			.layer_painter(LayerId::new(Order::Foreground, Id::null()));
 
-		painter.circle(self.pos, 5.0, Color32::DEBUG_COLOR, Stroke::none());
 		// Drain placements that have not been called this tick
 		//self.placements.drain_filter(|v, placement| !placement.keep);
 

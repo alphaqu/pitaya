@@ -63,7 +63,12 @@ impl AnimationManager {
     }
 
     pub fn tick(&self, ctx: &Context) {
-        self.inner.lock().time = ctx.input().time;
+        let mut inner = self.inner.lock();
+        inner.time = ctx.input().time;
+        if inner.any_active {
+            ctx.request_repaint();
+            inner.any_active = false;
+        }
     }
 
     pub fn end_tick(&mut self, ctx: &Context) {

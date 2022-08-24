@@ -2,6 +2,7 @@ use egui::Color32;
 use material_color_utilities_rs::palettes::core::CorePalette;
 use crate::color::{ColorGroup, ColorTag};
 
+#[derive(Default, Clone)]
 pub struct Theme {
     // Accents
     pub primary: ColorGroup,
@@ -37,9 +38,9 @@ impl Theme {
             tertiary: ColorGroup::new_tonal(&mut palette.a3, dark_mode).await,
             red: ColorGroup::new_custom(source_argb, [0xff, 0xff, 0x00, 0x00], dark_mode).await,
             orange: ColorGroup::new_custom(source_argb, [0xff, 0xff, 0x80, 0x00], dark_mode).await,
-            yellow: ColorGroup::new_custom(source_argb, [0xff, 0xf5, 0xd7, 0x41], dark_mode).await,
-            green: ColorGroup::new_custom(source_argb, [0xff, 0x90, 0xa7, 0x49], dark_mode).await,
-            blue: ColorGroup::new_custom(source_argb, [0xff, 0x41, 0xd5, 0xd7], dark_mode).await,
+            yellow: ColorGroup::new_custom(source_argb, [0xff, 0xff, 0xff, 0x00], dark_mode).await,
+            green: ColorGroup::new_custom(source_argb, [0xff, 0x00, 0xff, 0x00], dark_mode).await,
+            blue: ColorGroup::new_custom(source_argb, [0xff, 0x00, 0xff, 0xff], dark_mode).await,
             bg: color32_from_argb(palette.n1.tone(bg)),
             fg: color32_from_argb(palette.n1.tone(fg)),
             outline: color32_from_argb(palette.n2.tone(outline)),

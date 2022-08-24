@@ -4,9 +4,7 @@ use crate::{AssetManager, System};
 use anyways::ext::AuditExt;
 use egui::style::Spacing;
 use egui::FontFamily::Proportional;
-use egui::{
-    Context, FontDefinitions, FontId, InnerResponse, Rounding, Style, TextStyle, Ui, Vec2, Visuals,
-};
+use egui::{Context, FontDefinitions, FontId, InnerResponse, Rect, Rounding, Style, TextStyle, Ui, Vec2, Visuals};
 use std::ops::{Deref, DerefMut};
 
 pub const SPACING_SIZE: f32 = 25.0;
@@ -76,6 +74,21 @@ impl<'t, 'mgr, 'egui> Pui<'t, 'mgr, 'egui> {
             add_contents(&mut pui)
         })
     }
+	pub fn allocate_ui_at_rect<R>(
+		&mut self,
+		max_rect: Rect,
+		add_contents: impl FnOnce(&mut Pui) -> R,
+	) -> InnerResponse<R> {
+		self.ui.allocate_ui_at_rect(max_rect, |ui| {
+			let mut pui = Pui {
+				color: self.color,
+				sys: self.sys,
+				ui,
+			};
+			add_contents(&mut pui)
+		})
+	}
+
     pub fn child<'nt, 'negui>(
         &self,
         new_ui: &'negui mut Ui,

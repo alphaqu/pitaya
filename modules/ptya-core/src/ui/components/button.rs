@@ -36,7 +36,7 @@ impl Button {
                 .set_easing(Easing::EaseOut)
 	            .set_from(1.0)
 	            .set_to(0.0)
-                .begin();
+                .begin_with_speed(3.0);
         }
         let click_value = click_animation.get_value();
 

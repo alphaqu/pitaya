@@ -213,7 +213,7 @@ impl Painter {
 			rect.min,
 			Align2::LEFT_TOP,
 			text.to_string(),
-			FontId::monospace(14.0),
+			FontId::monospace(24.0),
 			color,
 		);
 	}

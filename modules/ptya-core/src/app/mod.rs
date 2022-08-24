@@ -24,13 +24,18 @@ impl AppManager {
 		}
 	}
 
+	pub fn update(&self, system: &System) {
+		let mut apps = self.apps.lock();
+		for (_, container) in apps.iter_mut() {
+			container.app().update(system);
+		}
+	}
 	pub fn load_app(
 		&self,
-		sys: &System,
 		manifest: Manifest,
-		launcher: impl Future<Output = Box<dyn App>> + Send + 'static,
+		app: Box<dyn App>,
 	) {
-		let container = AppContainer::new(sys, manifest, launcher);
+		let container = AppContainer::new(manifest, app);
 		self.apps.lock().insert(
 			AppId {
 				id: container.manifest().id.clone(),

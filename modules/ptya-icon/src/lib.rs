@@ -6,7 +6,7 @@ use syn::{LitInt, LitStr};
 
 lazy_static! {
 	static ref LOOKUP: AHashMap<String, String> = create_lookup();
-};
+}
 
 #[proc_macro]
 pub fn icon(item: proc_macro::TokenStream) -> proc_macro::TokenStream {

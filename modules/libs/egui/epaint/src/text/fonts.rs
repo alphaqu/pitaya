@@ -177,7 +177,7 @@ impl Default for FontTweak {
 	fn default() -> Self {
 		Self {
 			scale: 1.0,
-			y_offset_factor: 0.0, // makes the default fonts look more centered in buttons and such
+			y_offset_factor: -0.2, // makes the default fonts look more centered in buttons and such
 			y_offset: 0.0,
 		}
 	}
