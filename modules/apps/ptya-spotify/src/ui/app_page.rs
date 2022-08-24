@@ -10,12 +10,10 @@ pub(crate) struct AppPage {
 
 impl AppPage {
 	pub fn new(api: SpotifyApi) -> AppPage {
-		AppPage {
-			api
-		}
+		AppPage { api }
 	}
 }
 
 pub enum AppPageView {
-	Albums()
+	Albums(),
 }

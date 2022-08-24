@@ -1,234 +1,267 @@
-#![feature(drain_filter)]
+#![feature(hash_drain_filter)]
 
-use std::f32::consts::PI;
-use std::ops::{Div, Mul};
-use std::sync::Arc;
-use std::time::Instant;
-
-use crate::graphics::{LayerDrawer, MapDrawer};
+use crate::graphics::MapGraphics;
+use crate::pos::TilePosition;
+use crate::query::MapQuery;
+use crate::styler::MapStyler;
+use crate::unit::MapUnit;
+use crate::viewport::Viewport;
+use ahash::AHashSet;
 use anyways::ext::AuditExt;
 use anyways::Result;
-use egui::epaint::{PathShape, Tessellator};
-use egui::{
-    Align2, Color32, FontFamily, FontId, Id, LayerId, Mesh, Order, Painter, Pos2, Rounding, Sense,
-    Shape, Stroke, Ui, Vec2,
-};
-use euclid::default::{Box2D, Point2D, Rect, Vector2D};
-use euclid::{Angle, Size2D, UnknownUnit};
-use image::imageops::FilterType;
-use image::ImageFormat;
-use lyon_tessellation::{FillOptions, StrokeOptions};
-use rayon::{ThreadPool, ThreadPoolBuilder};
-use ptya_common::app_icon;
-use ptya_common::apps::app::{EGuiApplication, AppInfo};
-use ptya_common::settings::style::{StyleColor, StyleSettings};
-use ptya_common::settings::Settings;
+use egui::{Color32, Id, PaintCallback, Painter, Pos2, Rounding, Sense, Stroke, Ui, Vec2};
+use glium::backend::Context;
+use glium::framebuffer::SimpleFrameBuffer;
+use glium::Surface;
+use log::{info, trace};
+use map_renderer::mesh::MeshBuilder;
+use map_renderer::types::Color;
+use mathie::{Rect, Vec2D};
+use ptya_core::app::{App, Manifest, Version};
+use ptya_core::color::{ColorTag, Theme};
+use ptya_core::ui::components::Button;
+use ptya_core::ui::Pui;
+use ptya_core::System;
+use ptya_icon::icon;
+use std::fs::metadata;
+use std::rc::Rc;
+use std::sync::{Arc, RwLock};
+use std::thread::sleep;
+use std::time::Duration;
+use tokio::runtime::Runtime;
+use tokio::sync::mpsc::{channel, Receiver, Sender};
+use viewer::MapViewer;
 
-use crate::tile::{Command, Tile};
-use crate::pos::{get_tile_pos, lat_to_y, lon_to_x, x_to_lon, y_to_lat, TilePosition};
-use crate::storage::MapStorage;
-use crate::viewer::MapViewer;
-
-mod tile;
 mod graphics;
-pub mod pos;
-mod storage;
+mod pos;
+mod query;
+mod styler;
+mod unit;
 mod viewer;
-mod style;
+mod viewport;
 
-pub(crate) const TOKEN: &str = env!("MAPBOX_TOKEN");
-
-pub struct Map {
-    storage: MapStorage,
-    drawer: MapDrawer,
-    old_area: egui::Rect,
-    frame_time: f32,
-    
-    thread_pool: Arc<ThreadPool>,
-    pub viewer: MapViewer,
-    pub dirty: bool,
+pub fn manifest() -> Manifest {
+	Manifest {
+		id: "map".to_string(),
+		name: "Map".to_string(),
+		icon: icon!("map"),
+		version: Version::new(0, 0, 0),
+	}
 }
 
-impl EGuiApplication for Map {
-    fn tick(&mut self, ui: &mut Ui, settings: &Settings) {
+pub fn load(system: &System) -> Result<Box<dyn App>> {
+	let asset = system.asset.clone();
+	let query = system
+		.runtime
+		.block_on(async { MapQuery::new(asset).await })
+		.wrap_err("Failed to create query")?;
 
-        let rect = ui.max_rect();
-        let response = ui.interact(rect, ui.id(), Sense::click_and_drag());
-        let drag_delta = response.drag_delta();
-        let scale = self.viewer.get_scale();
+	Ok(Box::new(Map {
+		query: Arc::new(query),
+		viewer: MapViewer {
+			zoom: 12.5,
+			x: 0.53574723,
+			y: 0.30801734,
+		},
+		graphics: MapGraphics::new(&system.gl_ctx)?,
+		styler: Arc::new(RwLock::new(MapStyler {
+			theme: Theme::default(),
+			level: 0.0,
+		})),
+		tokio: Runtime::new().wrap_err("Failed to create runtime")?,
+		requested: Default::default(),
+		new_tiles: channel(16),
+	}))
+}
 
-        if drag_delta.x != 0.0 || drag_delta.y != 0.0 || response.ctx.input().scroll_delta.y != 0.0
-        {
-            self.dirty = true;
-        }
+pub struct Map {
+	query: Arc<MapQuery>,
+	viewer: MapViewer,
+	graphics: MapGraphics,
+	styler: Arc<RwLock<MapStyler>>,
 
-        self.viewer.x -= (drag_delta.x / rect.height()) / scale;
-        self.viewer.y -= (drag_delta.y / rect.height()) / scale;
+	tokio: Runtime,
+	requested: AHashSet<TilePosition>,
+	new_tiles: (
+		Sender<(TilePosition, MeshBuilder)>,
+		Receiver<(TilePosition, MeshBuilder)>,
+	),
+}
 
-        if let Some(hover) = response.hover_pos() {
-            self.viewer.zoom += response.ctx.input().scroll_delta.y / 100.0;
-        }
+impl App for Map {
+	fn tick(&mut self, ui: &mut Pui, fb: &mut SimpleFrameBuffer) {
+		Button::new("map", ColorTag::Blue).ui(ui);
+		let rect = ui.clip_rect();
+		let response = ui.interact(rect, ui.id().with("hello"), Sense::click_and_drag());
+		let drag_delta = response.drag_delta();
+		let scale = 2f64.powf(self.viewer.zoom as f64);
+		//info!("{scale}");
+		self.viewer.x -= ((drag_delta.x as f64 / rect.height() as f64) / scale) * 2.0;
+		self.viewer.y -= ((drag_delta.y as f64 / rect.height() as f64) / scale) * 2.0;
 
-        ui.painter().rect(rect, 0.0, settings.style.bg_2, Stroke::none());
-        self.draw(ui.painter(), rect, settings).unwrap();
-    }
-    
+		if let Some(hover) = response.hover_pos() {
+			self.viewer.zoom += response.ctx.input().scroll_delta.y as f64 / 250.0;
+		}
+
+		let (width, height) = fb.get_dimensions();
+		self.tick(ui, fb, Vec2D::new(width, height), rect);
+
+		if !self.requested.is_empty() {
+			ui.ctx().request_repaint();
+		}
+	}
+
+	fn update(&mut self, system: &System) {
+		self.styler.write().unwrap().theme = (*system.color.theme()).clone();
+	}
 }
 
 impl Map {
-    pub fn new() -> Result<Map> {
-        let thread_pool = Arc::new(ThreadPoolBuilder::new().build()?);
-        Ok(Map {
-            storage: MapStorage::new("./cache", &thread_pool).wrap_err("Failed to create Storage")?,
-            thread_pool,
-            drawer: MapDrawer::new(vec![
-                (
-                    "water".to_string(),
-                    LayerDrawer {
-                        stroke_width: 0.0,
-                        stroke: StyleColor::Custom(Color32::TRANSPARENT),
-                        fill: StyleColor::Bg0,
-                    },
-                ),
-                (
-                    "admin".to_string(),
-                    LayerDrawer {
-                        stroke_width: 2.0,
-                        stroke: StyleColor::Bg4,
-                        fill: StyleColor::Custom(Color32::TRANSPARENT),
-                    },
-                ),
-                (
-                    "road".to_string(),
-                    LayerDrawer {
-                        stroke_width: 2.0,
-                        stroke: StyleColor::Fg0,
-                        fill: StyleColor::Custom(Color32::TRANSPARENT),
-                    },
-                ),
-            ]),
-            old_area: egui::Rect::NOTHING,
-            frame_time: 0.0,
-            viewer: MapViewer {
-                zoom: 12.5,
-                x: 0.53574723,
-                y: 0.30801734,
-            },
-            dirty: false,
-        })
-    }
+	pub fn get_viewport(&mut self) -> &mut MapViewer {
+		&mut self.viewer
+	}
 
-    pub fn app_info() -> AppInfo {
-        AppInfo {
-            id: "map".to_string(),
-            name: "Map".to_string(),
-            icon: app_icon!("../icon.png"),
-        }
-    }
+	pub fn tick(
+		&mut self,
+		ui: &mut Pui,
+		framebuffer: &mut SimpleFrameBuffer,
+		resolution: Vec2D<u32>,
+		rect: egui::Rect,
+	) {
+		let painter = ui.ctx().debug_painter();
 
-    pub fn draw(&mut self, painter: &Painter, area: egui::Rect, settings: &Settings) -> Result<()> {
-        if self.old_area != area {
-            self.old_area = area;
-            self.dirty = true;
-        }
+		let minimap = egui::Rect::from_min_size(rect.min, Vec2::splat(rect.height() / 2.0));
+		let viewport = self.viewer.get_viewport(resolution, rect.aspect_ratio());
+		draw_debug(&painter, minimap, viewport.view, Color32::RED);
+		for pos in viewport.get_tiles() {
+			let mut renderer_pos = pos;
+			loop {
+				if self.graphics.contains_tile(renderer_pos) {
+					self.graphics
+						.draw_tile(
+							&self.styler.read().unwrap(),
+							&painter,
+							minimap,
+							rect,
+							framebuffer,
+							&viewport,
+							renderer_pos,
+						)
+						.unwrap();
+					// Breaks this while and requests the needed pos
+					break;
+				} else {
+					self.request_tile(&viewport, resolution, renderer_pos);
+					if let Some(pos) = renderer_pos.get_parent() {
+						renderer_pos = pos;
+					} else {
+						break;
+					}
+				}
+			}
+		}
 
-        let viewport = self.viewer.get_viewport(area.aspect_ratio());
+		while let Ok((pos, mesh)) = self.new_tiles.1.try_recv() {
+			trace!("Building map tile {pos:?}");
+			self.requested.remove(&pos);
+			self.graphics.add_tile(pos, mesh.build(&ui.sys.gl_ctx));
+			ui.ctx().request_repaint();
+			trace!("Map tile {pos:?} is built and ready.");
+		}
 
-        if self.dirty {
-            painter.ctx().request_repaint();
+		self.graphics.clear(&painter, minimap, &viewport);
+	}
 
-            let mut rect1 = area;
-            rect1.set_height(10.0);
-            self.dirty = false;
-            self.drawer.clear();
-            let start = Instant::now();
-            let tile_viewport = self.viewer.get_tile_viewport(viewport);
-            let tiles = self.viewer.get_tiles(&mut self.storage, &tile_viewport)?;
-            for request in &tiles {
-                let rect = request.render_tile_pos.get_viewport_magic(viewport, area);
-                let cull_rect = request.cull_tile_pos.get_viewport_magic(viewport, area);
-                self.drawer
-                    .push(self.viewer.zoom, &request.render_tile_pos, request.render_tile, rect, settings)
-                    .wrap_err("Failed to render layer")?;
-            }
-            if self.storage.end_frame(viewport) {
-                self.dirty = true;
-            }
-            self.frame_time = start.elapsed().as_secs_f32();
-        }
+	fn request_tile(&mut self, viewport: &Viewport, resolution: Vec2D<u32>, pos: TilePosition) {
+		if !self.requested.contains(&pos) {
+			self.requested.insert(pos);
+			trace!("Starting request for {pos:?}");
 
-        let start = Instant::now();
-        self.drawer.draw(painter, viewport, area);
+			let query = self.query.clone();
+			let styler = self.styler.clone();
+			let sender = self.new_tiles.0.clone();
+			let view = viewport.view.any_unit();
 
-        painter.text(
-            area.min,
-            Align2::LEFT_TOP,
-            format!("x: {}, y: {}, zoom: {}, ms: {:.5}+{:.5}", self.viewer.x, self.viewer.y,  self.viewer.zoom, self.frame_time * 1000.0, start.elapsed().as_secs_f32() * 1000.0),
-            FontId::new(40.0, FontFamily::Proportional),
-            Color32::WHITE,
-        );
-        return Ok(());
-        //for (rect, pos) in tile_drawn {
-        //    painter.text(rect.center(), Align2::CENTER_CENTER, format!("{}x{} ({})", pos.x, pos.y, pos.zoom), FontId::new(20.0, FontFamily::Proportional), Color32::WHITE);
-        //    painter.rect(
-        //        rect,
-        //        0.0,
-        //        Color32::TRANSPARENT,
-        //        Stroke::new(1.0, Color32::WHITE),
-        //    );
-        //}
-        // let tile_viewport = self.viewer.get_tile_viewport(viewport);
-        //         let tiles = self.viewer.get_tiles(&mut self.storage, &tile_viewport)?;
-        //
-        //         for (pos, tile) in &tiles {
-        //             let rect = pos.get_map_position();
-        //             let rect = rect.translate(-viewport.min.to_vector());
-        //             let rect = rect.scale(1.0 / viewport.width(), 1.0 / viewport.height());
-        //             let rect = rect.scale(area.width(), area.height());
-        //             let rect = egui::Rect::from_min_size(
-        //                 Pos2::new(rect.origin.x, rect.origin.y),
-        //                 Vec2::new(rect.size.width, rect.size.height),
-        //             );
-        //
-        //             self.drawer
-        //                 .push(tile, &rect, settings)
-        //                 .wrap_err("Failed to render layer")?;
-        //         }
-        //
-        //         self.drawer.draw(painter);
-        //         for (pos, tile) in tiles {
-        //             let rect = pos.get_map_position();
-        //             let rect = rect.translate(-viewport.min.to_vector());
-        //             let rect = rect.scale(1.0 / viewport.width(), 1.0 / viewport.height());
-        //             let rect = rect.scale(area.width(), area.height());
-        //             let rect = egui::Rect::from_min_size(
-        //                 Pos2::new(rect.origin.x, rect.origin.y),
-        //                 Vec2::new(rect.size.width, rect.size.height),
-        //             );
-        //
-        //             painter.rect(
-        //                 rect,
-        //                 Rounding::none(),
-        //                 Color32::TRANSPARENT,
-        //                 Stroke::new(1.0, Color32::WHITE),
-        //             );
-        //             painter.text(
-        //                 rect.center(),
-        //                 Align2::CENTER_CENTER,
-        //                 format!("{}x{} ({})", pos.x, pos.y, pos.zoom),
-        //                 FontId::proportional(40.0),
-        //                 Color32::WHITE,
-        //             );
-        //         }
-        //
-        //         //painter.rect(
-        //         //    area,
-        //         //    Rounding::none(),
-        //         //    Color32::TRANSPARENT,
-        //         //    Stroke::new(10.0, Color32::RED),
-        //         //);
-        //
-        //         self.storage.end_frame(viewport);
-        //         Ok(())
-    }
+			let tile_rect = pos.get_rect();
+			let view_rect = viewport.view;
+			let scale = (tile_rect.size() / view_rect.size()).any_unit();
+			let scale = (1.0 / viewport.resolution.y() as f64) / scale.y();
+
+			let handle = self.tokio.spawn(async move {
+				trace!("Querying map tile {pos:?}");
+				// TODO error handling
+				let tile = query.get(pos).await.unwrap();
+				trace!("Compiling map tile {pos:?}");
+				let builder = MeshBuilder::compile(
+					&*styler.read().unwrap(),
+					tile,
+					pos.zoom.zoom,
+					scale as f32,
+				);
+				trace!("Sending map tile {pos:?}");
+				sender.send((pos, builder)).await.ok().unwrap();
+			});
+		}
+	}
+}
+
+pub(crate) fn draw_debug(
+	painter: &Painter,
+	minimap: egui::Rect,
+	rect: Rect<f64, MapUnit>,
+	color: Color32,
+) {
+	return;
+	// let minimap_size = minimap.size();
+	//     let min = rect.min();
+	//     let max = rect.max();
+	//     painter.rect(
+	//         egui::Rect::from_min_max(
+	//             minimap.min + Vec2::new(min.x() * minimap_size.x, min.y() * minimap_size.y),
+	//             minimap.min + Vec2::new(max.x() * minimap_size.x, max.y() * minimap_size.y),
+	//         ),
+	//         Rounding::none(),
+	//         color.linear_multiply(0.1),
+	//         Stroke::new(1.0, color),
+	//     );
+}
+pub(crate) fn test_draw_tile(
+	painter: &Painter,
+	screen: egui::Rect,
+	pos: Vec2D<f64>,
+	scale: Vec2D<f64>,
+) {
+	return;
+
+	// let tile = egui::Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(1.0, 1.0));
+	// let add = tile.translate(Vec2::new(pos.x(), pos.y()));
+	// let scale = Vec2::new(scale.x(), scale.y());
+
+	// // 0 - 1
+	// let scaled = egui::Rect::from_min_max(
+	//     (add.min.to_vec2() * scale).to_pos2(),
+	//     (add.max.to_vec2() * scale).to_pos2(),
+	// );
+
+	// // screen correction
+	// let screen = egui::Rect::from_min_max(
+	//     screen.min + (scaled.min.to_vec2() * screen.size()),
+	//     screen.min + (scaled.max.to_vec2() * screen.size()),
+	// );
+
+	// let color = Color32::from_rgb(255, 0, 255);
+	// painter.rect(
+	//     screen,
+	//     Rounding::none(),
+	//     color.linear_multiply(0.2),
+	//     Stroke::new(1.0, color),
+	// );
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn compile() {}
 }

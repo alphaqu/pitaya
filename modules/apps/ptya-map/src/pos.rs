@@ -1,97 +1,103 @@
-use std::f32::consts::PI;
-use std::ops::{Div, Mul};
-use std::path::PathBuf;
-use egui::Vec2;
-use euclid::Angle;
-use euclid::default::{Box2D, Point2D, Rect, Size2D};
+use crate::unit::MapUnit;
+use mathie::{Rect, Vec2D};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone, Debug)]
 pub struct TilePosition {
-	pub zoom: u8,
-	pub x: u32,
-	pub y: u32,
+	pub zoom: Zoom,
+	pub x: u64,
+	pub y: u64,
 }
 
 impl TilePosition {
-	pub fn get_outer(&self) -> Option<TilePosition>{
-		if self.zoom != 0 {
+	/// Gets the parent of this tile position. The parent is the tile on the above zoom level holding this tile.
+	pub fn get_parent(&self) -> Option<TilePosition> {
+		if let Some(zoom) = self.zoom.get_parent() {
 			Some(TilePosition {
-				zoom: self.zoom - 1,
+				zoom,
 				x: self.x / 2,
-				y: self.y / 2
+				y: self.y / 2,
 			})
 		} else {
 			None
 		}
 	}
 
-	pub fn get_viewport_magic(&self, viewport: Box2D<f32>, area: egui::Rect) -> egui::Rect {
-		let tile_scale = 2u32.pow(self.zoom as u32) as f32;
-		let tile_size = Vec2::new(1.0 / tile_scale, 1.0 / tile_scale);
-
-		let viewport_size = Vec2::new(viewport.width(), viewport.height());
-		let viewport_min = Vec2::new(viewport.min.x, viewport.min.y);
-		let pos = (Vec2::new(
-			self.x as f32 / tile_scale,
-			self.y as f32 / tile_scale,
-		) - viewport_min) * Vec2::new(1.0 / viewport_size.x, 1.0 / viewport_size.y);
-
-		egui::Rect::from_min_size(
-			area.min + pos.mul(area.size()),
-			tile_size.div(viewport_size).mul(area.size()),
+	/// Gets the position of the tile in Map Space
+	#[inline(always)]
+	pub fn get_pos(&self) -> Vec2D<f64, MapUnit> {
+		let num_tiles = self.zoom.get_num_tiles();
+		Vec2D::new(
+			self.x as f64 / num_tiles as f64,
+			self.y as f64 / num_tiles as f64,
 		)
 	}
 
+	/// Gets the size of the tile in Map Space
+	#[inline(always)]
+	pub fn get_size(&self) -> Vec2D<f64, MapUnit> {
+		let size = 1.0 / self.zoom.get_num_tiles() as f64;
+		Vec2D::new(size, size)
+	}
+
+	/// Gets the rectangle that this tile covers in map space.
+	#[inline(always)]
+	pub fn get_rect(&self) -> Rect<f64, MapUnit> {
+		Rect::new_u(self.get_pos(), self.get_size(), MapUnit::default())
+	}
+
 	pub fn is_valid(&self) -> bool {
-		let scale = 2u32.pow(self.zoom as u32);
+		let scale = self.zoom.get_num_tiles();
 		self.x < scale && self.y < scale
 	}
 
-	pub fn get_map_position(&self) -> Rect<f32> {
-		let scale = 2u32.pow(self.zoom as u32);
-		let size = Size2D::new(1.0 / scale as f32, 1.0 / scale as f32);
-		let origin = Point2D::new(self.x as f32 / scale as f32, self.y as f32 / scale as f32);
-		Rect::new(origin, size)
+	pub fn get_file_name(&self) -> String {
+		format!("tile-{}-{}x{}.mvt", self.zoom.zoom, self.x, self.y)
 	}
 
-	pub fn get_cached_path(&self, mut dir: PathBuf) -> PathBuf {
-		dir.push(format!("tile-{}-{}x{}.mvt", self.zoom, self.x, self.y));
-		dir
-	}
-
-	pub fn parse(text: &str) -> Option<Self> {
+	pub fn parse_file_name(text: &str) -> Option<Self> {
 		let (_, value) = text.split_once("tile-")?;
 		let (zoom, value) = value.split_once("-")?;
 		let (x, y) = value.split_once("x")?;
 		Some(TilePosition {
-			zoom: zoom.parse().ok()?,
+			zoom: Zoom::new(zoom.parse().ok()?)?,
 			x: x.parse().ok()?,
-			y: y.parse().ok()?
+			y: y.parse().ok()?,
 		})
 	}
 }
 
-pub fn lat_to_y(lat: Angle<f32>, zoom: u8) -> f32 {
-	let n = (zoom as f32).powf(2.0);
-	(1.0 - lat.radians.tan().asinh() / PI) / 2.0 * n
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+pub struct Zoom {
+	pub zoom: u8,
 }
 
-pub fn lon_to_x(lon: Angle<f32>, zoom: u8) -> f32 {
-	let n = (zoom as f32).powf(2.0);
-	lon.to_degrees() / 360.0 * n
-}
+impl Zoom {
+	pub fn new(value: u8) -> Option<Zoom> {
+		if value <= 23 {
+			Some(Zoom { zoom: value })
+		} else {
+			None
+		}
+	}
 
-pub fn y_to_lat(y: f32, zoom: u8) -> Angle<f32> {
-	let n = (zoom as f32).powf(2.0);
-	Angle::radians((PI * (1.0 - 2.0 * y / n)).sinh().atan())
-}
+	pub fn get_parent(&self) -> Option<Zoom> {
+		if self.zoom != 0 {
+			Zoom::new(self.zoom - 1)
+		} else {
+			None
+		}
+	}
 
-pub fn x_to_lon(x: f32, zoom: u8) -> Angle<f32> {
-	let n = (zoom as f32).powf(2.0);
-	Angle::degrees(x / n * 360.0 - 180.0)
-}
+	pub fn get_child(&self) -> Option<Zoom> {
+		if self.zoom != 255 {
+			Zoom::new(self.zoom + 1)
+		} else {
+			None
+		}
+	}
 
-pub fn get_tile_pos(v: f32, zoom: u8) -> u32 {
-	let max_tile = zoom.pow(2);
-	v.clamp(0.0, max_tile as f32) as u32
+	#[inline(always)]
+	pub const fn get_num_tiles(&self) -> u64 {
+		2u64.pow(self.zoom as u32)
+	}
 }

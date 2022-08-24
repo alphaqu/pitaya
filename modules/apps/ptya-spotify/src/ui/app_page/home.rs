@@ -1,3 +1,1 @@
-pub struct HomePage {
-	
-}
+pub struct HomePage {}

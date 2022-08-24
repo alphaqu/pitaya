@@ -45,6 +45,7 @@ members = [
     #"modules/apps/ptya-map-v2",
     # Apps
     "modules/apps/ptya-playground",
+    "modules/apps/ptya-map",
     # Modules
     "modules/ptya-animation",
     "modules/ptya-asset",

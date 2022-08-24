@@ -9,12 +9,8 @@ use librespot::playback::mixer::softmixer::SoftMixer;
 use librespot::playback::mixer::{Mixer, MixerConfig};
 use librespot::playback::player::{Player, PlayerEventChannel};
 
-pub struct SpotifyController {
-
-}
+pub struct SpotifyController {}
 
 impl SpotifyController {
-
-
-    pub fn draw(&mut self, ui: &mut Ui) {}
+	pub fn draw(&mut self, ui: &mut Ui) {}
 }

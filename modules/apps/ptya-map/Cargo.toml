@@ -1,24 +1,25 @@
 [package]
-name = "ptya-map-v2"
+name = "ptya-map"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ptya-common = { path = "../../ptya-common" }
+ptya-core = { path = "../../ptya-core" }
+ptya-icon = { path = "../../ptya-icon" }
 log = "0.4"
-anyways = "0.2"
-fxhash = "0.2"
+anyways = { version = "0.3.0", features = ["sync", "send"] }
+ahash = "0.8.0"
 mathie = "0.5"
 glium = "0.31"
 egui = { path = "../../libs/egui/egui" }
 egui_glium = { path = "../../libs/egui_glium" }
 
-atlas = { path = "../../libs/map_renderer" }
+map_renderer = { path = "../../libs/map_renderer" }
 
 reqwest = { version = "0.11", features = ["json", "blocking"] }
-tokio = { version = "1.20", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
 
 flate2 = "1.0"
 protobuf = "3.1"

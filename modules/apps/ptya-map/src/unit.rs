@@ -12,10 +12,10 @@ pub struct TileUnit(pub Zoom);
 impl Unit for TileUnit {}
 
 impl UnitCompatibility<f64, MapUnit> for TileUnit {
-    fn convert_value(&self, value: f64, unit: MapUnit) -> Option<f64> {
-        let tile_num = self.0.get_num_tiles() as f64;
-        Some(value * tile_num)
-    }
+	fn convert_value(&self, value: f64, unit: MapUnit) -> Option<f64> {
+		let tile_num = self.0.get_num_tiles() as f64;
+		Some(value * tile_num)
+	}
 }
 
 impl UnitCompatibility<f64, TileUnit> for MapUnit {
