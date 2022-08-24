@@ -127,7 +127,6 @@ impl Content {
                             }
                         }
                     }
-                    no_change = false;
 
                     if !no_change && (pos - pos.round()).abs() < threshold {
                         let pos = (idx as f32 * widget_height) - (WIDGET_ADD_HEIGHT / 2.0);
