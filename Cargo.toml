@@ -16,7 +16,6 @@ egui_glium = { path = "modules/libs/egui_glium" }
 glium = "0.31"
 glutin = "0.28"
 # glfw = "0.45.0"
-image = { version = "0.24", default-features = false, features = ["png"] }
 
 # Modules
 ptya-core = { path = "modules/ptya-core" }
@@ -47,6 +46,9 @@ members = [
     # Apps
     "modules/apps/ptya-playground",
     # Modules
+    "modules/ptya-animation",
+    "modules/ptya-asset",
+    "modules/ptya-color",
     "modules/ptya-core",
     "modules/ptya-icon",
     "modules/ptya-frontend"

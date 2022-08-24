@@ -1,7 +1,13 @@
-pub mod animation;
+pub mod animation {
+    pub use ptya_animation::*;
+}
 pub mod app;
-pub mod asset;
-pub mod color;
+pub mod asset {
+    pub use ptya_asset::*;
+}
+pub mod color {
+    pub use ptya_color::*;
+}
 pub mod config;
 pub mod task;
 pub mod ui;
@@ -13,6 +19,9 @@ use anyways::Result;
 use egui::{CentralPanel, Color32, Frame, Spinner, Widget};
 use glium::backend::Context;
 use log::{info, LevelFilter};
+use ptya_animation::AnimationManager;
+use ptya_asset::{AssetManager, Location};
+use ptya_color::ColorManager;
 use simplelog::{ColorChoice, CombinedLogger, TermLogger, TerminalMode, WriteLogger};
 use std::fs::File;
 use std::ops::{Deref, DerefMut};
@@ -21,10 +30,7 @@ use std::sync::Arc;
 use tokio::join;
 use tokio::runtime::Runtime;
 
-use crate::animation::AnimationManager;
 use crate::app::AppManager;
-use crate::asset::{AssetManager, Location};
-use crate::color::ColorManager;
 use crate::ui::UiAssets;
 
 pub struct System {
@@ -160,11 +166,4 @@ fn init_logging() -> Result<()> {
     ])
     .wrap_err("Failed to init logging")?;
     Ok(())
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn testing_comp() {}
 }

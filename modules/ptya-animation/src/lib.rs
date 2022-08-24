@@ -7,25 +7,25 @@ mod easing;
 mod lerp;
 mod manager;
 
+pub use crate::easing::Easing;
+pub use crate::lerp::{extend, Lerp};
+pub use crate::manager::AnimationManager;
 use std::marker::PhantomData;
-pub use crate::animation::manager::AnimationManager;
-pub use crate::animation::easing::Easing;
-pub use crate::animation::lerp::{extend, Lerp};
 
+use egui::{Id, Pos2, Rect};
 use parking_lot::Mutex;
 use std::sync::Arc;
-use egui::{Id, Pos2, Rect};
 
 pub struct AnimationRef<L> {
     pub id: Id,
-    _d: PhantomData<L>
+    _d: PhantomData<L>,
 }
 
 impl<L> AnimationRef<L> {
     pub fn new(id: Id) -> AnimationRef<L> {
         AnimationRef {
             id,
-            _d: Default::default()
+            _d: Default::default(),
         }
     }
 }
@@ -57,11 +57,9 @@ impl<L: Lerp + Send + Sync> Animation<L> {
     /// If the to value is not the same as the parameter
     /// it will wait until the animation is finished and then "redirect" the animation to the new state.
     pub fn redirect_with_speed(&mut self, to: L, speed: f32) -> &mut Self {
-       if self.get_to() != &to {
-           self.when_done(|ani| {
-               ani.anchor_from().set_to(to).begin_with_speed(speed)
-           });
-       }
+        if self.get_to() != &to {
+            self.when_done(|ani| ani.anchor_from().set_to(to).begin_with_speed(speed));
+        }
         self
     }
 
@@ -79,12 +77,12 @@ impl<L: Lerp + Send + Sync> Animation<L> {
         let pos = self.get_pos();
         pos > 0.0 && pos < 1.0
     }
-    
+
     pub fn has_started(&self) -> bool {
         let pos = self.get_pos();
         pos > 0.0
     }
-    
+
     pub fn is_finished(&self) -> bool {
         let pos = self.get_pos();
         pos >= 1.0

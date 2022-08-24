@@ -1,6 +1,6 @@
-use crate::animation::config::AnimationConfig;
-use crate::animation::lerp::Lerp;
-use crate::animation::{Animation, AnimationImpl};
+use crate::config::AnimationConfig;
+use crate::lerp::Lerp;
+use crate::{Animation, AnimationImpl};
 use ahash::AHashMap;
 use egui::{Context, Id};
 use log::{info, trace};

@@ -2,8 +2,8 @@ use material_color_utilities_rs::blend::harmonize;
 use material_color_utilities_rs::palettes::core::CorePalette;
 use material_color_utilities_rs::palettes::tonal::TonalPalette;
 use egui::Color32;
-use crate::animation::Lerp;
-use crate::color::theme::color32_from_argb;
+use ptya_animation::Lerp;
+use crate::theme::color32_from_argb;
 
 #[derive(Clone, PartialEq, Eq, Default)]
 pub struct ColorGroup {

@@ -18,14 +18,14 @@ pub struct AssetManager {
 impl AssetManager {
     pub async fn new() -> Result<AssetManager> {
         #[cfg(debug_assertions)]
-        let comp = AssetManager {
+            let comp = AssetManager {
             assets: PathBuf::from("./assets"),
             data: PathBuf::from("./home/data"),
             config: PathBuf::from("./home/config"),
             cache: PathBuf::from("./home/cache"),
         };
         #[cfg(not(debug_assertions))]
-        let comp = AssetManager {
+            let comp = AssetManager {
             assets: PathBuf::from("./assets"),
             data: dirs::data_dir()
                 .expect("Could not find the data directory")
@@ -77,9 +77,9 @@ impl AssetManager {
     }
 
     pub async fn get_data<P, S>(&self, loc: Location, path: P) -> Result<S>
-    where
-        P: AsRef<Path>,
-        S: Serialize + DeserializeOwned + Default,
+        where
+            P: AsRef<Path>,
+            S: Serialize + DeserializeOwned + Default,
     {
         if self.contains_file(loc, &path).await {
             let data = self
@@ -98,9 +98,9 @@ impl AssetManager {
     }
 
     pub async fn save_data<P, S>(&self, loc: Location, path: P, value: &S) -> Result<()>
-    where
-        P: AsRef<Path>,
-        S: Serialize + DeserializeOwned + Default,
+        where
+            P: AsRef<Path>,
+            S: Serialize + DeserializeOwned + Default,
     {
         let data = serde_json::to_vec_pretty(value).wrap_err("Failed to serialize data")?;
         self.write_file(loc, path, &data)

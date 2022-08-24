@@ -9,11 +9,11 @@ pub mod config;
 use egui::Color32;
 use std::ops::Deref;
 use log::info;
-use crate::animation::Lerp;
+use ptya_animation::Lerp;
 
-pub use crate::color::color::{ColorGroup, ColorTag};
-use crate::color::config::{ColorConfig, ThemeTag};
-pub use crate::color::theme::Theme;
+pub use crate::color::{ColorGroup, ColorTag};
+use crate::config::{ColorConfig, ThemeTag};
+pub use crate::theme::Theme;
 
 pub struct ColorManager {
     config: ColorConfig,
@@ -32,11 +32,11 @@ impl ColorManager {
                 },
                 config.dark_mode,
             )
-            .await,
+                .await,
             config,
         }
     }
-    
+
     pub fn theme(&self) -> &Theme {
         &self.theme
     }

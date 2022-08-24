@@ -1,8 +1,6 @@
-use std::future::Future;
 use glium::framebuffer::SimpleFrameBuffer;
 use semver::Version;
 use egui::{Id};
-use crate::System;
 use crate::ui::Pui;
 
 pub trait App: Send {

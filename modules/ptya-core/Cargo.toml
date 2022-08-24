@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# ======================================== core ========================================
 egui = { path = "../libs/egui/egui" }
 ptya-icon = { path = "../ptya-icon"}
+ptya-animation = { path = "../ptya-animation"}
+ptya-asset = { path = "../ptya-asset"}
+ptya-color = { path = "../ptya-color"}
+
 anyways = { version = "0.3.0", features = ["sync", "send"] }
 tokio = { version = "1", features = ["full"] }
 simplelog = { version = "0.11", features = ["paris"] }
@@ -23,7 +26,3 @@ serde_json = "1"
 parking_lot = "0.12"
 ahash = "0.8"
 log = "0.4"
-
-# ======================================== color ========================================
-material-color-utilities-rs = "0.1.0"
-palette = "0.6.1"
