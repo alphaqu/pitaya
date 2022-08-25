@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui = { path = "../libs/egui/egui" }
+egui = "0.19.0"
 ptya-icon = { path = "../ptya-icon" }
 ptya-animation = { path = "../ptya-animation" }
 ptya-asset = { path = "../ptya-asset" }
@@ -15,7 +15,7 @@ ptya-color = { path = "../ptya-color" }
 anyways = { version = "0.3.0", features = ["sync", "send"] }
 tokio = { version = "1", features = ["full"] }
 simplelog = { version = "0.11", features = ["paris"] }
-glium = "0.31"
+glium = "0.32"
 
 # Serialization
 semver = "1.0.13"

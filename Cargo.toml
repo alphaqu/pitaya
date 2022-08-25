@@ -10,11 +10,11 @@ tokio = { version = "1.20" , features = ["full"]}
 
 
 # GUI
-egui = {  path = "modules/libs/egui/egui" }
+egui = "0.19.0"
 #eframe = "0.18.0"
 egui_glium = { path = "modules/libs/egui_glium" }
-glium = "0.31"
-glutin = "0.28"
+glium = "0.32.1"
+glutin = "0.29.1"
 # glfw = "0.45.0"
 
 # Modules
@@ -35,10 +35,6 @@ members = [
     "modules/libs/map_renderer",
     "modules/libs/delaunator",
     # EGUI
-    "modules/libs/egui/egui",
-    "modules/libs/egui/emath",
-    "modules/libs/egui/epaint",
-    "modules/libs/egui/egui-winit",
     "modules/libs/egui_glium",
 
     #"modules/ptya-map",

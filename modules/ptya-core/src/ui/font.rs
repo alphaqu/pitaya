@@ -50,7 +50,7 @@ fn add_font(fonts: &mut FontDefinitions, font: FontData, name: &str) {
 	fonts.font_data.insert(name.to_owned(), font);
 	fonts.families.insert(
 		FontFamily::Name(Arc::from(name)),
-		vec![name.to_string()],
+		vec![name.to_string(), "Roboto-Regular".to_string()],
 	);
 	info!("Adding font: {name}")
 }

@@ -7,6 +7,8 @@ use ahash::AHashMap;
 use egui::mutex::{Mutex, MutexGuard};
 pub use semver::Version;
 use std::future::Future;
+use std::rc::Rc;
+use glium::backend::Context;
 
 mod app;
 mod container;
@@ -32,10 +34,11 @@ impl AppManager {
 	}
 	pub fn load_app(
 		&self,
+		ctx: &Rc<Context>,
 		manifest: Manifest,
 		app: Box<dyn App>,
 	) {
-		let container = AppContainer::new(manifest, app);
+		let container = AppContainer::new(ctx,manifest, app);
 		self.apps.lock().insert(
 			AppId {
 				id: container.manifest().id.clone(),

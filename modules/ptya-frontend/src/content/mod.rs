@@ -1,4 +1,5 @@
-use crate::content::app::AppPanel;
+use std::mem::forget;
+use crate::content::app::{AppPanel, AppResponse};
 use crate::dropper::Placement;
 use crate::AppDropper;
 use egui::style::Margin;
@@ -56,12 +57,27 @@ impl Content {
                 }
 
                 self.update_layout(&mut ui, rect, dropper);
+
+                let mut new_dropper = None;
                 if let Some(primary) = &mut self.primary {
-                    primary.draw(&mut ui)
+                    match primary.draw(&mut ui, dropper) {
+                        Ok(_) => {}
+                        Err(AppResponse::Move) => {
+                            new_dropper = Some(primary.id().clone());
+                        }
+                    }
                 }
 
-                for widget in &mut self.widgets {
-                    widget.draw(&mut ui);
+                for app in self.widgets.drain_filter(|widget| {
+                    matches!(widget.draw(&mut ui, dropper), Err(AppResponse::Move))
+                }) {
+                    new_dropper = Some(app.id().clone());
+                };
+
+                if let Some(id) = new_dropper {
+                    if dropper.is_none() {
+                        *dropper = Some(AppDropper::new(id));
+                    }
                 }
             });
     }

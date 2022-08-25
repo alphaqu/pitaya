@@ -1,22 +1,21 @@
-use egui::epaint::ClippedShape;
-use egui::{Align, Area, Color32, Id, Layout, Order, PaintCallback, Rect, Rgba, Vec2};
+use crate::AppDropper;
+use egui::{pos2, Id, LayerId, Mesh, Order, Rect, Rgba, Rounding, Sense, Vec2};
+use epaint::{Color32, RectShape, Tessellator};
 use glium::framebuffer::SimpleFrameBuffer;
 use glium::texture::{MipmapsOption, SrgbFormat, SrgbTexture2d};
 use glium::Surface;
-use ptya_core::animation::{Animation, AnimationImpl, Easing};
-use ptya_core::app::{App, AppId};
-use ptya_core::ui::components::ProgressSpinner;
-use ptya_core::ui::{Pui, ROUNDING, SPACING_SIZE};
+use ptya_core::animation::{Animation, AnimationImpl, Easing, Lerp};
+use ptya_core::app::{App, AppContainer, AppId};
+use ptya_core::color::ColorTag;
+use ptya_core::ui::{Pui, INTERACTIVE_SIZE, ROUNDING, SPACING_SIZE};
 use ptya_core::System;
 use std::rc::Rc;
+use log::warn;
 
 pub struct AppPanel {
 	id: AppId,
 	rect: Rect,
 	animation: Option<Id>,
-
-	// App Drawing
-	buffer: Rc<SrgbTexture2d>,
 }
 
 impl AppPanel {
@@ -25,16 +24,6 @@ impl AppPanel {
 			id,
 			rect: from,
 			animation: None,
-			buffer: Rc::new(
-				SrgbTexture2d::empty_with_format(
-					&sys.gl_ctx,
-					SrgbFormat::U8U8U8U8,
-					MipmapsOption::NoMipmap,
-					0,
-					0,
-				)
-				.unwrap(),
-			),
 		}
 	}
 
@@ -72,78 +61,134 @@ impl AppPanel {
 		}
 	}
 
-	pub fn draw(&mut self, ui: &mut Pui) {
+	pub fn draw(
+		&mut self,
+		ui: &mut Pui,
+		dropper: &mut Option<AppDropper>,
+	) -> Result<(), AppResponse> {
 		let mut ui = ui.ascend(1.0);
 		if let Some(container) = ui.sys.app.apps().get_mut(&self.id) {
 			let rect = self.get_rect(&mut ui);
-			ui.allocate_ui_at_rect(rect, |eui | {
+
+			ui.allocate_ui_at_rect(rect, |eui| {
 				eui.set_clip_rect(rect);
-				self.draw_app(eui, container.app());
-			});
+				eui.set_min_size(rect.size());
+
+				self.draw_app(eui, container, dropper)
+			})
+			.inner?;
+
 			//let mut eui = ui.child_ui_with_id_source(rect, Layout::default(), self.id.egui_id().with("ui"));
 			//eui.set_clip_rect(rect);
 		}
+
+		Ok(())
 	}
 
-	fn draw_app(&mut self, ui: &mut Pui, app: &mut dyn App) {
+	fn draw_app(
+		&mut self,
+		ui: &mut Pui,
+		app: &mut AppContainer,
+		dropper: &mut Option<AppDropper>,
+	) -> Result<(), AppResponse> {
 		let rect = ui.max_rect();
-		let ppp = ui.ctx().pixels_per_point();
+		self.draw_window_descriptor(ui, rect, dropper)?;
 
+		let ppp = ui.ctx().pixels_per_point();
 		let width = (rect.width() * ppp) as u32;
 		let height = (rect.height() * ppp) as u32;
 
 		// TODO redraw on actual change
-		let mut redraw = true;
-		if self.buffer.width() != width || self.buffer.height() != height {
-			self.buffer = Rc::new(SrgbTexture2d::empty(&ui.sys().gl_ctx, width, height).unwrap());
-			redraw = true;
+		if app.framebuffer.width() != width || app.framebuffer.height() != height {
+			app.framebuffer =
+				Rc::new(SrgbTexture2d::empty(&ui.sys().gl_ctx, width, height).unwrap());
+			app.dirty = true;
 		}
 
-		if redraw {
-			let shape = {
-				let mut fb = SimpleFrameBuffer::new(&ui.sys().gl_ctx, &*self.buffer).unwrap();
-				let bg: Rgba = ui.color().bg().into();
-				fb.clear_color(bg.r(), bg.b(), bg.g(), 1.0);
+		ui.painter().rect_filled(rect, ROUNDING, ui.color().bg());
 
-				let id = self.id.egui_id().with("app_window");
-				let area = Area::new(id)
-					.order(Order::Middle)
-					.fixed_pos(rect.min)
-					.drag_bounds(rect.shrink(SPACING_SIZE)).interactable(true);
+		if let Some(id) = app.id {
+			let ctx = ui.ctx();
+			let pixels_per_point = ctx.pixels_per_point();
+			let options = *ctx.tessellation_options();
+			let texture_atlas = ctx.fonts().texture_atlas();
+			let font_tex_size = texture_atlas.lock().size();
+			let prepared_discs = texture_atlas.lock().prepared_discs();
 
-				let layer_id = area.layer();
+			let mut tessellator =
+				Tessellator::new(pixels_per_point, options, font_tex_size, prepared_discs);
+			let mut mesh = Mesh::with_texture(id);
+			tessellator.tessellate_rect(
+				&RectShape {
+					rect,
+					rounding: ROUNDING,
+					fill: Color32::WHITE,
+					stroke: Default::default(),
+				},
+				&mut mesh,
+			);
 
-				let rect1 = area.show(ui.ctx(), |app_ui| {
-					app_ui.set_min_size(rect.size());
-					app_ui.set_clip_rect(app_ui.clip_rect().expand(SPACING_SIZE));
-					let mut pui = ui.child(app_ui, 0.0, None);
-					app.tick(&mut pui, &mut fb);
-				}).response.rect;
-				//ui.ctx().debug_painter().debug_rect(rect1, Color32::TEMPORARY_COLOR, "Window");
+			for vertex in &mut mesh.vertices {
+				let pos = ((vertex.pos - rect.min) / rect.size()).to_pos2();
+				vertex.uv = pos2(pos.x, 1.0 - pos.y);
+			}
 
-
-				let shape: Vec<ClippedShape> = ui
-					.ctx()
-					.layer_painter(layer_id)
-					.paint_list()
-					.0
-					.drain(..)
-					.collect();
-				shape
-			};
-
-			ui.painter().add(PaintCallback {
-				rect,
-				callback: Rc::new((self.buffer.clone(), shape)),
-			});
+			ui.painter().add(mesh);
 		}
 
-		ui.painter().add(PaintCallback {
-			rect,
-			callback: Rc::new((self.buffer.clone(), ROUNDING)),
-		});
+
+		let mut fb = SimpleFrameBuffer::new(&ui.sys().gl_ctx, &*app.framebuffer).unwrap();
+		let bg: Rgba = ui.color().bg().into();
+		fb.clear_color(bg.r(), bg.b(), bg.g(), 0.0);
+		app.app.tick(ui, &mut fb);
+
+		Ok(())
 	}
+
+	fn draw_window_descriptor(
+		&self,
+		ui: &mut Pui,
+		app_rect: Rect,
+		dropper: &mut Option<AppDropper>,
+	) -> Result<(), AppResponse> {
+		let id = ui.id().with("window");
+
+		let mut animation = ui.sys().animation.get(id);
+		if dropper.is_some() {
+			animation.redirect(0.0);
+		} else {
+			animation.redirect(1.0);
+		}
+		let v = animation.get_value();
+		let size = Vec2::new((INTERACTIVE_SIZE * 0.75) * v, (INTERACTIVE_SIZE * 0.75) * v);
+		let rect = Rect::from_min_size(app_rect.right_top() - Vec2::new(size.x, 0.0), size);
+
+		let color = ui.color().ascend(2.0).tag_bg(ColorTag::Secondary);
+		let response = ui.interact(rect, id, Sense::click_and_drag());
+		if dropper.is_none() && response.drag_started() {
+			return Err(AppResponse::Move);
+		}
+
+		ui.painter().rect_filled(
+			rect,
+			Rounding::none().lerp(
+				&Rounding {
+					nw: 0.0,
+					se: 0.0,
+					..ROUNDING
+				},
+				v,
+			),
+			color,
+		);
+		Ok(())
+	}
+
 	pub fn id(&self) -> &AppId {
 		&self.id
 	}
+}
+
+pub enum AppResponse {
+	Move,
 }

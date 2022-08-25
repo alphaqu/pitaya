@@ -186,7 +186,7 @@ impl<L: Lerp + Send + Sync> AnimationImpl<L> {
 		AnimationImpl {
 			from: value.clone(),
 			to: value,
-			easing: Easing::Linear,
+			easing: Easing::EaseInOut,
 			start: 0.0,
 			duration: 0.0,
 		}
@@ -198,7 +198,7 @@ impl AnimationImpl<Rect> {
 		AnimationImpl {
 			from: Rect::from_min_max(Pos2::ZERO, Pos2::ZERO),
 			to: Rect::from_min_max(Pos2::ZERO, Pos2::ZERO),
-			easing: Easing::Linear,
+			easing: Easing::EaseInOut,
 			start: 0.0,
 			duration: 0.0,
 		}
@@ -206,6 +206,6 @@ impl AnimationImpl<Rect> {
 }
 impl<L: Lerp + Send + Sync + Default> Default for AnimationImpl<L> {
 	fn default() -> Self {
-		Self::new(L::default(), L::default(), Easing::Linear)
+		Self::new(L::default(), L::default(), Easing::EaseInOut)
 	}
 }

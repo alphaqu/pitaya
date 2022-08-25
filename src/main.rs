@@ -15,6 +15,7 @@ use glutin::platform::unix::WindowBuilderExtUnix;
 //use ptya_common::System;
 //use ptya_frontend::Frontend;
 use std::rc::Rc;
+use log::warn;
 use tokio::runtime::Handle;
 use tokio::task::block_in_place;
 use ptya_frontend::Frontend;
@@ -25,7 +26,7 @@ use ptya_frontend::Frontend;
 
 fn main() {
     let display_size = 27.0;
-    let target_display_size = 15.6;
+    let target_display_size = 27.0;
     let ratio = target_display_size / display_size;
 
     let event_loop = glutin::event_loop::EventLoop::with_user_event();
@@ -41,6 +42,21 @@ fn main() {
             let repaint_after = egui_glium.run(&display, |egui_ctx| {
                 pitaya.update(egui_ctx);
             });
+
+            for (_, app) in pitaya.frontend.system.app.apps().iter_mut() {
+                if app.id.is_none() {
+                    app.id = Some(egui_glium.painter.register_native_texture(app.framebuffer.clone()));
+                }
+
+                if app.dirty {
+                    if let Some(id) = app.id {
+                        egui_glium.painter.replace_native_texture(id, app.framebuffer.clone());
+                    } else {
+                        warn!("App is dirty but does not have an id bound");
+                    }
+                    app.dirty = false;
+                }
+            }
 
             *control_flow = if quit {
                 glutin::event_loop::ControlFlow::Exit
@@ -136,8 +152,7 @@ impl Pitaya {
         }
     }
 
-    fn update(&mut self, ctx: &Context){
-
+    fn update(&mut self, ctx: &Context) {
         self.frontend.tick().unwrap();
         //if !self.system.is_loaded() {
         //    self.system.tick().unwrap();

@@ -24,8 +24,8 @@ pub struct PlaygroundApp {}
 
 impl App for PlaygroundApp {
 	fn tick(&mut self, ui: &mut Pui, fb: &mut SimpleFrameBuffer) {
-		ui.painter().rect_filled(ui.max_rect(), 0.0, ui.color().ascend(10.0).tag_bg(ColorTag::Red));
-		//Button::new("hello", ColorTag::Blue).ui(ui);
+		//ui.painter().rect_filled(ui.max_rect(), 0.0, ui.color().ascend(10.0).tag_bg(ColorTag::Red));
+		Button::new("hello", ColorTag::Blue).ui(ui);
 		//Slider::new("hello", false).show(ui);
 		//if ui.interact(ui.max_rect(), ui.id().with("69420"), Sense::click_and_drag()).hovered() {
 		//	println!("hover playground");

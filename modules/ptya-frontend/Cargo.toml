@@ -11,9 +11,11 @@ ptya-icon = { path = "../ptya-icon" }
 log = "0.4"
 anyways = { version = "0.3.0", features = ["sync", "send"] }
 
-glium = "0.31"
+glium = "0.32"
 egui_glium = { path = "../libs/egui_glium" }
-egui = { path = "../libs/egui/egui" }
+egui = "0.19.0"
+epaint = "0.19.0"
+
 
 # Apps
 ptya-playground = { path = "../apps/ptya-playground" }

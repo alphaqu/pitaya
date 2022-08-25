@@ -9,8 +9,8 @@ edition = "2021"
 log = "0.4"
 
 serde = { version = "1", features = ["derive"] }
-egui = { path = "../libs/egui/egui" }
 ptya-animation = { path = "../ptya-animation" }
+egui = "0.19.0"
 
 material-color-utilities-rs = "0.1.0"
 palette = "0.6.1"
