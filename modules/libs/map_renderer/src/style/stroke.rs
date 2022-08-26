@@ -1,3 +1,5 @@
+use std::panic::catch_unwind;
+use log::error;
 use crate::geometry::path::{MultiPathGeometry, PathGeometry};
 use crate::style::Style;
 use crate::types::MapVertex;
@@ -48,7 +50,7 @@ impl Style for StrokeStyle {
 	}
 
 	fn compile(&self, input: Self::Input<'_>, v: &mut Vec<MapVertex>, i: &mut Vec<u32>) {
-		let half_width = (1.0 / 8192.0) / 4.0;
+		let half_width = (1.0 / 8192.0);
 
 		let start = v.len();
 		let len = input.path.len() * 2;
@@ -79,9 +81,23 @@ impl Style for StrokeStyle {
 			data.push(vertex.a_pos[1] * 8192.0);
 		}
 
-		for idx in earcutr::earcut(&data, &Vec::new(), 2) {
-			i.push((idx + start) as u32);
+		match catch_unwind(|| {
+			earcutr::earcut(&data, &Vec::new(), 2)
+		}) {
+			Ok(vec) => {
+				for idx in vec {
+					i.push((idx + start) as u32);
+				};
+			}
+			Err(vec) => {
+				let mut out = Vec::new();
+				for x in input.path {
+					out.push([x.x(), x.y()]);
+				}
+				error!("{vec:?}: {:?}", out);
+			}
 		}
+
 	}
 
 	fn needs_update(&self, old_styler: Self) -> bool {
@@ -105,6 +121,11 @@ impl Style for StrokeStyle {
 			let half_width = self.width / 2.0;
 			let len = v.len();
 			let mut pos = 0;
+			let color = if self.width == 0.0 {
+				[0.0, 0.0, 0.0, 0.0]
+			} else {
+				self.color
+			};
 			PathCursor {
 				points: input.path,
 				pos: 0,
@@ -113,13 +134,13 @@ impl Style for StrokeStyle {
 				let vertex = value + (side * half_width);
 				v[pos] = MapVertex {
 					a_pos: vertex.into(),
-					a_color: self.color,
+					a_color: color,
 				};
 
 				let vertex = value + ((-side) * half_width);
 				v[(len - 1) - pos] = MapVertex {
 					a_pos: vertex.into(),
-					a_color: self.color,
+					a_color: color,
 				};
 				pos += 1;
 			});
@@ -127,7 +148,11 @@ impl Style for StrokeStyle {
 	}
 
 	fn prepare(&mut self, scale: f32) {
-		self.width *= scale;
+		if self.width < 0.5 {
+			self.width = 0.0;
+		} else {
+			self.width *= scale;
+		}
 	}
 }
 
@@ -174,9 +199,26 @@ impl<'a> PathCursor<'a> {
 			let next = self.peek_next().map(|next| get_side(value, next));
 
 			let side = match (prev, next) {
-				(Some(v0), Some(v1)) => v0.lerp(v1, 0.5).normalize(),
-				(Some(v0), None) => v0,
-				(None, Some(v0)) => v0,
+				(Some(v0), Some(v1)) => {
+					let d1 = v0.lerp(v1, 0.5);
+					if d1.hypot() == 0.0 {
+						v0
+					} else {
+						d1.normalize()
+					}
+				},
+				(Some(v0), None) => {
+					if v0.x().is_nan() {
+						panic!("start");
+					}
+					v0
+				},
+				(None, Some(v0)) =>{
+					if v0.x().is_nan() {
+						panic!("end");
+					}
+					v0
+				},
 				_ => {
 					panic!("we fucked up");
 				}

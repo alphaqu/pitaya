@@ -115,7 +115,7 @@ impl MapGraphics {
 
 					mesh.update(
 						styler,
-						viewport.zoom as f32 - 1.0,
+						viewport.zoom as f32,
 						(1.0 / tile.size().y()) as f32,
 					);
 
@@ -175,7 +175,6 @@ impl MapGraphics {
 			let x = !viewport.view.intersects_rect(rect);
 			if x {
 				draw_debug(painter, minimap, rect, Color32::BLUE);
-				info!("Removed {:?}", pos);
 			}
 			x
 		});

@@ -3,17 +3,17 @@
 use crate::graphics::MapGraphics;
 use crate::pos::TilePosition;
 use crate::query::MapQuery;
-use crate::styler::MapStyler;
+use crate::style::MapStyler;
 use crate::unit::MapUnit;
 use crate::viewport::Viewport;
 use ahash::AHashSet;
 use anyways::ext::AuditExt;
 use anyways::Result;
-use egui::{Color32, Id, PaintCallback, Painter, Pos2, Rounding, Sense, Stroke, Ui, Vec2};
+use egui::{Color32, Id, PaintCallback, Painter, Pos2, Rgba, Rounding, Sense, Stroke, Ui, Vec2};
 use glium::backend::Context;
 use glium::framebuffer::SimpleFrameBuffer;
 use glium::Surface;
-use log::{info, trace};
+use log::{error, info, trace};
 use map_renderer::mesh::MeshBuilder;
 use map_renderer::types::Color;
 use mathie::{Rect, Vec2D};
@@ -24,6 +24,7 @@ use ptya_core::ui::Pui;
 use ptya_core::System;
 use ptya_icon::icon;
 use std::fs::metadata;
+use std::panic::catch_unwind;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 use std::thread::sleep;
@@ -35,7 +36,7 @@ use viewer::MapViewer;
 mod graphics;
 mod pos;
 mod query;
-mod styler;
+mod style;
 mod unit;
 mod viewer;
 mod viewport;
@@ -59,15 +60,12 @@ pub fn load(system: &System) -> Result<Box<dyn App>> {
 	Ok(Box::new(Map {
 		query: Arc::new(query),
 		viewer: MapViewer {
-			zoom: 12.5,
+			zoom: 1.0,
 			x: 0.53574723,
 			y: 0.30801734,
 		},
 		graphics: MapGraphics::new(&system.gl_ctx)?,
-		styler: Arc::new(RwLock::new(MapStyler {
-			theme: Theme::default(),
-			level: 0.0,
-		})),
+		styler: Arc::new(RwLock::new(MapStyler::new(system.egui_ctx.clone()))),
 		tokio: Runtime::new().wrap_err("Failed to create runtime")?,
 		requested: Default::default(),
 		new_tiles: channel(16),
@@ -90,7 +88,9 @@ pub struct Map {
 
 impl App for Map {
 	fn tick(&mut self, ui: &mut Pui, fb: &mut SimpleFrameBuffer) {
-		Button::new("map", ColorTag::Blue).ui(ui);
+		let bg: Rgba = ui.color().bg().into();
+		fb.clear_color_srgb(bg.r(), bg.g(), bg.b(), 1.0);
+
 		let rect = ui.clip_rect();
 		let response = ui.interact(rect, ui.id().with("hello"), Sense::click_and_drag());
 		let drag_delta = response.drag_delta();
@@ -112,7 +112,7 @@ impl App for Map {
 	}
 
 	fn update(&mut self, system: &System) {
-		self.styler.write().unwrap().theme = (*system.color.theme()).clone();
+		self.styler.write().unwrap().update_theme(system.color.theme());
 	}
 }
 
@@ -187,23 +187,33 @@ impl Map {
 			let scale = (tile_rect.size() / view_rect.size()).any_unit();
 			let scale = (1.0 / viewport.resolution.y() as f64) / scale.y();
 
-			let handle = self.tokio.spawn(async move {
+			self.tokio.spawn(async move {
 				trace!("Querying map tile {pos:?}");
 				// TODO error handling
 				let tile = query.get(pos).await.unwrap();
 				trace!("Compiling map tile {pos:?}");
-				let builder = MeshBuilder::compile(
-					&*styler.read().unwrap(),
-					tile,
-					pos.zoom.zoom,
-					scale as f32,
-				);
-				trace!("Sending map tile {pos:?}");
-				sender.send((pos, builder)).await.ok().unwrap();
+				match catch_unwind(|| {
+					let builder = MeshBuilder::compile(
+						&*styler.read().unwrap(),
+						tile,
+						pos.zoom.zoom,
+						scale as f32,
+					);
+					builder
+				}) {
+					Ok(builder) => {
+						trace!("Sending map tile {pos:?}");
+						sender.send((pos, builder)).await.ok().unwrap();
+					}
+					Err(err) => {
+						error!("Failed to make tile: {err:?}");
+					}
+				};
 			});
 		}
 	}
 }
+
 
 pub(crate) fn draw_debug(
 	painter: &Painter,

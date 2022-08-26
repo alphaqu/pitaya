@@ -17,10 +17,10 @@ impl ColorGroup {
 	pub async fn new_custom(source: [u8; 4], color: [u8; 4], dark_mode: bool) -> ColorGroup {
 		let value = harmonize(color, source);
 		let mut palette = CorePalette::new(value, false);
-		Self::new_tonal(&mut palette.a1, dark_mode).await
+		Self::new_tonal(&mut palette.a1, dark_mode)
 	}
 	
-	pub async fn new_tonal(tones: &mut TonalPalette, dark_mode: bool) -> ColorGroup {
+	pub fn new_tonal(tones: &mut TonalPalette, dark_mode: bool) -> ColorGroup {
 		if dark_mode {
 			ColorGroup {
 				color: color32_from_argb(tones.tone(80)),

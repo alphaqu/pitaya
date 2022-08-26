@@ -36,7 +36,7 @@ impl Frontend {
 
 	pub fn tick(&mut self) -> Result<()> {
 		if self.system.is_loaded() {
-			self.system.egui_ctx.set_debug_on_hover(true);
+		//	self.system.egui_ctx.set_debug_on_hover(true);
 			if let Some(dropper) = &mut self.dropper {
 				dropper.tick(&self.system);
 				self.system.egui_ctx.request_repaint();

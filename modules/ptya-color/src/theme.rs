@@ -33,9 +33,9 @@ impl Theme {
         let outline_weak = if dark_mode { 30 } else { 80 };
 
         Theme {
-            primary: ColorGroup::new_tonal(&mut palette.a1, dark_mode).await,
-            secondary: ColorGroup::new_tonal(&mut palette.a2, dark_mode).await,
-            tertiary: ColorGroup::new_tonal(&mut palette.a3, dark_mode).await,
+            primary: ColorGroup::new_tonal(&mut palette.a1, dark_mode),
+            secondary: ColorGroup::new_tonal(&mut palette.a2, dark_mode),
+            tertiary: ColorGroup::new_tonal(&mut palette.a3, dark_mode),
             red: ColorGroup::new_custom(source_argb, [0xff, 0xff, 0x00, 0x00], dark_mode).await,
             orange: ColorGroup::new_custom(source_argb, [0xff, 0xff, 0x80, 0x00], dark_mode).await,
             yellow: ColorGroup::new_custom(source_argb, [0xff, 0xff, 0xff, 0x00], dark_mode).await,

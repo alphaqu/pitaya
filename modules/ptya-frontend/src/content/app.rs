@@ -95,8 +95,8 @@ impl AppPanel {
 		self.draw_window_descriptor(ui, rect, dropper)?;
 
 		let ppp = ui.ctx().pixels_per_point();
-		let width = (rect.width() * ppp) as u32;
-		let height = (rect.height() * ppp) as u32;
+		let width = (rect.width() ) as u32;
+		let height = (rect.height()) as u32;
 
 		// TODO redraw on actual change
 		if app.framebuffer.width() != width || app.framebuffer.height() != height {
@@ -138,8 +138,6 @@ impl AppPanel {
 
 
 		let mut fb = SimpleFrameBuffer::new(&ui.sys().gl_ctx, &*app.framebuffer).unwrap();
-		let bg: Rgba = ui.color().bg().into();
-		fb.clear_color(bg.r(), bg.b(), bg.g(), 0.0);
 		app.app.tick(ui, &mut fb);
 
 		Ok(())

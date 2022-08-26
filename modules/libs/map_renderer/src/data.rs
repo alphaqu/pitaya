@@ -1,5 +1,5 @@
+use ahash::AHashMap;
 use crate::geometry::GeometryData;
-use fxhash::FxHashMap;
 
 pub struct TileData {
 	pub layers: Vec<LayerData>,
@@ -11,7 +11,7 @@ pub struct LayerData {
 }
 
 pub struct FeatureData {
-	pub fields: FxHashMap<String, Value>,
+	pub fields: AHashMap<String, Value>,
 	pub geometry: GeometryData,
 }
 
