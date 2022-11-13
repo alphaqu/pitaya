@@ -63,11 +63,11 @@ impl Frontend {
 				ptya_playground::manifest(),
 				ptya_playground::load(),
 			);
-			self.system.app.load_app(
-				&self.system.gl_ctx,
-				ptya_map::manifest(),
-				ptya_map::load(&self.system).wrap_err("Failed to initialize map application")?,
-			);
+			//self.system.app.load_app(
+			//	&self.system.gl_ctx,
+			//	ptya_map::manifest(),
+			//	ptya_map::load(&self.system).wrap_err("Failed to initialize map application")?,
+			//);
 			self.system.app.update(&self.system);
 			self.sidebar.update(&self.system);
 		}

@@ -92,8 +92,6 @@ impl AppPanel {
 		dropper: &mut Option<AppDropper>,
 	) -> Result<(), AppResponse> {
 		let rect = ui.max_rect();
-		self.draw_window_descriptor(ui, rect, dropper)?;
-
 		let ppp = ui.ctx().pixels_per_point();
 		let width = (rect.width() ) as u32;
 		let height = (rect.height()) as u32;
@@ -136,6 +134,7 @@ impl AppPanel {
 			ui.painter().add(mesh);
 		}
 
+		self.draw_window_descriptor(ui, rect, dropper)?;
 
 		let mut fb = SimpleFrameBuffer::new(&ui.sys().gl_ctx, &*app.framebuffer).unwrap();
 		app.app.tick(ui, &mut fb);
@@ -159,7 +158,7 @@ impl AppPanel {
 		}
 		let v = animation.get_value();
 		let size = Vec2::new((INTERACTIVE_SIZE * 0.75) * v, (INTERACTIVE_SIZE * 0.75) * v);
-		let rect = Rect::from_min_size(app_rect.right_top() - Vec2::new(size.x, 0.0), size);
+		let rect = Rect::from_min_size(app_rect.right_top() - Vec2::new(size.x, 0.0) + Vec2::new(-(ROUNDING.nw * 0.3) * (1.0 - v), (ROUNDING.nw * 0.3) * (1.0 - v)), size);
 
 		let color = ui.color().ascend(2.0).tag_bg(ColorTag::Secondary);
 		let response = ui.interact(rect, id, Sense::click_and_drag());

@@ -26,7 +26,7 @@ use ptya_frontend::Frontend;
 
 fn main() {
     let display_size = 27.0;
-    let target_display_size = 27.0;
+    let target_display_size = 15.6;
     let ratio = target_display_size / display_size;
 
     let event_loop = glutin::event_loop::EventLoop::with_user_event();
