@@ -68,10 +68,13 @@ impl Content {
                     }
                 }
 
-                for app in self.widgets.drain_filter(|widget| {
-                    matches!(widget.draw(&mut ui, dropper), Err(AppResponse::Move))
-                }) {
-                    new_dropper = Some(app.id().clone());
+                for app in &mut self.widgets {
+                    match app.draw(&mut ui, dropper) {
+                        Ok(_) => {}
+                        Err(AppResponse::Move) => {
+                            new_dropper = Some(app.id().clone());
+                        }
+                    };
                 };
 
                 if let Some(id) = new_dropper {
