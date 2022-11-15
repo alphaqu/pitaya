@@ -5,7 +5,7 @@ use crate::ui::{INTERACTIVE_SIZE, ROUNDING, SPACING_SIZE};
 pub fn alloc_intractable(ui: &mut Ui, content_width: f32) -> (Rect, Response, Rounding) {
     let (rect, response) = ui.allocate_at_least(
         Vec2::new(
-            SPACING_SIZE + 5.0+ content_width + 5.0+ SPACING_SIZE,
+            SPACING_SIZE + 5.0 + content_width + 5.0 + SPACING_SIZE,
             INTERACTIVE_SIZE,
         ),
         Sense::click_and_drag(),
@@ -26,10 +26,9 @@ pub fn draw_icon(painter: &Painter, icon: u32, pos: Pos2, size: f32, color: Colo
     let job = LayoutJob::simple(text, font_id.clone(), color, f32::INFINITY);
     let arc = painter.ctx().fonts().layout_job(job);
 
-    let rect1 = painter.ctx().fonts().lock().fonts.font(&font_id).uv_rect(icon);
-    let y_offset = rect1.offset.y / painter.ctx().pixels_per_point();
+    let y_offset = size / 6.0;
 
-    let rect = Align2::CENTER_CENTER.anchor_rect(Rect::from_min_size(pos - Vec2::new(0.0, y_offset), arc.rect.size()));
+    let rect = Align2::CENTER_CENTER.anchor_rect(Rect::from_min_size(pos + Vec2::new(0.0, y_offset), arc.rect.size()));
 
     painter.galley(rect.min, arc);
 }

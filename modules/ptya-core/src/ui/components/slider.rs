@@ -3,9 +3,7 @@ use crate::color::ColorTag;
 use crate::ui::components::Text;
 use crate::ui::util::{alloc_intractable, draw_icon};
 use crate::ui::{Pui, SPACING_SIZE, VISUAL_SIZE};
-use egui::{
-	Align2, FontFamily, FontId, Rect, Response, RichText, Rounding, Stroke, Vec2, WidgetText,
-};
+use egui::{Align2, Color32, FontFamily, FontId, Rect, Response, RichText, Rounding, Stroke, Vec2, WidgetText};
 use ptya_icon::icon;
 use std::ops::Deref;
 
@@ -117,8 +115,8 @@ impl Slider {
 		// Drawing
 		let painter = ui.painter();
 
-		let decline_pos = rect.left_center() + Vec2::new((VISUAL_SIZE / 2.0) + SPACING_SIZE, 0.0);
-		let accept_pos = rect.right_center() - Vec2::new((VISUAL_SIZE / 2.0) + SPACING_SIZE, 0.0);
+		let decline_pos = rect.left_center() + Vec2::new((VISUAL_SIZE / 4.0) + SPACING_SIZE, 0.0);
+		let accept_pos = rect.right_center() - Vec2::new((VISUAL_SIZE / 4.0) + SPACING_SIZE, 0.0);
 		let item_offset = Vec2::new((FULL_TARGET_W / 2.0) * slide_pos, 0.0);
 
 		// Track
@@ -129,6 +127,33 @@ impl Slider {
 
 		let text_track_rect = Rect::from_min_max(rect.min + left_shrink, rect.max - right_shrink);
 		// Confirm Track
+		let accept_rounding = Self::slide_lerp(slide_pos, &Rounding {
+			nw: 0.0,
+			sw: 0.0,
+			..rounding
+		}, &Rounding {
+			nw: SPACING_SIZE / 2.0,
+			sw: SPACING_SIZE / 2.0,
+			..rounding
+		}, &Rounding {
+			nw: rect.height() / 3.0,
+			sw: rect.height() / 3.0,
+			..rounding
+		});
+		let decline_rounding = Self::slide_lerp(slide_pos, &Rounding {
+			ne: rect.height() / 3.0,
+			se: rect.height() / 3.0,
+			..rounding
+		}, &Rounding {
+			ne: SPACING_SIZE / 2.0,
+			se: SPACING_SIZE / 2.0,
+			..rounding
+		}, &Rounding {
+			ne: 0.0,
+			se: 0.0,
+			..rounding
+		});
+
 		painter.rect(
 			{
 				let mut rect = Rect::from_min_max(rect.center_top(), rect.max - right_shrink);
@@ -136,17 +161,13 @@ impl Slider {
 				if self.decline_allowed {
 					rect.min.x += (text.width() / 2.0) - (SPACING_SIZE / 4.0);
 				} else {
-					rect.min.x += SPACING_SIZE;
+					rect.min.x += SPACING_SIZE / 4.0;
 				}
 				// rect.max.y += HEIGHT_SHRINK;
 
 				rect
 			},
-			Rounding {
-				nw: SPACING_SIZE / 2.0,
-				sw: SPACING_SIZE / 2.0,
-				..rounding
-			},
+			accept_rounding,
 			color
 				.ascend(1.0)
 				.tag_bg(ColorTag::Green)
@@ -164,11 +185,7 @@ impl Slider {
 					rect.max.x -= (text.width() / 2.0) - (SPACING_SIZE / 4.0);
 					rect
 				},
-				Rounding {
-					ne: SPACING_SIZE / 2.0,
-					se: SPACING_SIZE / 2.0,
-					..rounding
-				},
+				decline_rounding,
 				color
 					.ascend(1.0)
 					.tag_bg(ColorTag::Red)
@@ -178,11 +195,17 @@ impl Slider {
 		}
 
 		// Text Track
+		let text_track = text_track_rect
+			.translate(item_offset)
+			.shrink2(Vec2::new(SPACING_SIZE / 4.0, SPACING_SIZE / 2.0));
 		painter.rect(
-			text_track_rect
-				.translate(item_offset)
-				.shrink2(Vec2::new(SPACING_SIZE / 4.0, SPACING_SIZE / 2.0)),
-			rounding,
+			text_track,
+			Rounding {
+				nw: (text_track.height() / 2.0) * (1.0 - slide_pos.clamp(0.0, 1.0)),
+				sw: (text_track.height() / 2.0) * (1.0 - slide_pos.clamp(0.0, 1.0)),
+				ne: (text_track.height() / 2.0) * (1.0 - slide_pos.clamp(-1.0, 0.0).abs()),
+				se: (text_track.height() / 2.0) * (1.0 - slide_pos.clamp(-1.0, 0.0).abs())
+			},
 			bg,
 			Stroke::none(),
 		);
